@@ -57,7 +57,7 @@ export function MatchCard({
           onClick={() => onSelect(match)}
           className="mt-2 block w-full text-left outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-radar/40"
         >
-          <h3 className="line-clamp-2 text-[15px] font-semibold leading-5 text-zinc-100">
+          <h3 className="line-clamp-2 break-words text-[15px] font-semibold leading-5 text-zinc-100">
             {match.title}
           </h3>
         </button>
@@ -80,7 +80,7 @@ export function MatchCard({
         </div>
 
         {preview && !compact ? (
-          <p className="mt-3 line-clamp-2 text-xs leading-5 text-zinc-500">
+          <p className="mt-3 line-clamp-2 break-words text-xs leading-5 text-zinc-500">
             {preview}
           </p>
         ) : null}

@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import {
-  ApiError,
+  getApiErrorMessage,
   getJobs,
   queryKeys,
   type WorkMode,
@@ -31,24 +31,6 @@ const workModes: { label: string; value: WorkMode }[] = [
   { label: 'Flexible', value: 'flexible' },
   { label: 'Unknown', value: 'unknown' },
 ];
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.kind === 'network') {
-      return 'The API could not be reached. Confirm that the local backend is running.';
-    }
-
-    if (error.status === 422) {
-      return 'One or more filters were rejected by the API.';
-    }
-
-    if (error.kind === 'invalid-response') {
-      return 'The API response does not match the documented contract.';
-    }
-  }
-
-  return 'Jobs could not be loaded. Try again in a moment.';
-}
 
 export function JobsPage() {
   const [searchParams] = useSearchParams();
@@ -96,6 +78,11 @@ export function JobsPage() {
   const total = jobsQuery.data?.total;
   const hasPreviousPage = offset > 0;
   const hasNextPage = total !== undefined && offset + pageSize < total;
+  const lastOffset =
+    total === undefined || total === 0
+      ? 0
+      : Math.floor((total - 1) / pageSize) * pageSize;
+  const isOffsetOutOfRange = total !== undefined && offset > lastOffset;
   const searchNeedsMoreCharacters =
     search.trim().length > 0 && search.trim().length < 2;
 
@@ -109,7 +96,7 @@ export function JobsPage() {
 
   return (
     <AppShell>
-      <main className="flex min-h-[calc(100vh-64px)] flex-col bg-canvas lg:h-screen lg:min-h-0">
+      <main className="flex min-h-[calc(100vh-64px)] min-w-0 flex-col bg-canvas lg:h-screen lg:min-h-0">
         <header className="shrink-0 border-b border-white/[0.06] bg-[#121314] px-4 py-5 sm:px-6 lg:px-7">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -220,7 +207,11 @@ export function JobsPage() {
                   Unable to load jobs
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  {getErrorMessage(jobsQuery.error)}
+                    {getApiErrorMessage(jobsQuery.error, {
+                      resource: 'Jobs',
+                      validationMessage:
+                        'One or more filters were rejected by the API.',
+                    })}
                 </p>
                 <button
                   type="button"
@@ -246,9 +237,20 @@ export function JobsPage() {
                 <h2 className="text-base font-semibold text-zinc-200">
                   No jobs match these filters
                 </h2>
-                <p className="mt-2 text-sm text-zinc-600">
-                  Try another work mode or clear one of the text filters.
-                </p>
+                  <p className="mt-2 text-sm text-zinc-600">
+                    {isOffsetOutOfRange
+                      ? 'The result set changed and this page no longer exists.'
+                      : 'Try another work mode or clear one of the text filters.'}
+                  </p>
+                  {isOffsetOutOfRange ? (
+                    <button
+                      type="button"
+                      onClick={() => setOffset(lastOffset)}
+                      className="mt-5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-sm text-zinc-200 hover:bg-white/[0.07]"
+                    >
+                      Open last available page
+                    </button>
+                  ) : null}
               </div>
             </div>
           ) : (
@@ -279,7 +281,7 @@ export function JobsPage() {
               </button>
               <button
                 type="button"
-                disabled={!hasNextPage}
+                disabled={!hasNextPage || jobsQuery.isPlaceholderData}
                 aria-label="Next jobs page"
                 onClick={() => setOffset(offset + pageSize)}
                 className="grid h-8 w-8 place-items-center rounded-lg border border-white/[0.07] text-zinc-400 disabled:cursor-not-allowed disabled:opacity-30"

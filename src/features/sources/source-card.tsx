@@ -101,7 +101,7 @@ export function SourceCard({ source }: SourceCardProps) {
               <AlertTriangle className="h-3.5 w-3.5" />
               Last reported error
             </div>
-            <p className="mt-2 line-clamp-3 text-xs leading-5 text-amber-100/65">
+            <p className="mt-2 line-clamp-3 break-words text-xs leading-5 text-amber-100/65">
               {source.last_error}
             </p>
           </div>

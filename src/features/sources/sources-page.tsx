@@ -1,23 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
-import { ApiError, getSources, queryKeys } from '../../api';
+import { getApiErrorMessage, getSources, queryKeys } from '../../api';
 import { AppShell } from '../../components/app-shell';
 import { SourceCard } from './source-card';
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.kind === 'network') {
-      return 'The API could not be reached. Confirm that the local backend is running.';
-    }
-
-    if (error.kind === 'invalid-response') {
-      return 'The API response does not match the documented source contract.';
-    }
-  }
-
-  return 'Sources could not be loaded. Try again in a moment.';
-}
 
 export function SourcesPage() {
   const sourcesQuery = useQuery({
@@ -33,7 +19,7 @@ export function SourcesPage() {
 
   return (
     <AppShell>
-      <main className="flex min-h-[calc(100vh-64px)] flex-col bg-canvas lg:h-screen lg:min-h-0">
+      <main className="flex min-h-[calc(100vh-64px)] min-w-0 flex-col bg-canvas lg:h-screen lg:min-h-0">
         <header className="shrink-0 border-b border-white/[0.06] bg-[#121314] px-4 py-5 sm:px-6 lg:px-7">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -81,7 +67,9 @@ export function SourcesPage() {
                   Unable to load sources
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  {getErrorMessage(sourcesQuery.error)}
+                  {getApiErrorMessage(sourcesQuery.error, {
+                    resource: 'Sources',
+                  })}
                 </p>
                 <button
                   type="button"

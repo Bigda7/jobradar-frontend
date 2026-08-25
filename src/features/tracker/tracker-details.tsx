@@ -1,7 +1,9 @@
 import { ExternalLink, Save, StickyNote, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
+import { useDrawerAccessibility } from '../../hooks/use-drawer-accessibility';
 import { useDebouncedValue } from '../../hooks/use-debounced-value';
+import { isSafeExternalUrl } from '../../security/external-url';
 import { formatLabel, formatRelativeDate } from '../matches/formatters';
 import { formatTrackerSalary } from './tracker-formatters';
 import { TrackerRecordStatusSelect } from './tracker-record-status-select';
@@ -16,8 +18,17 @@ interface TrackerDetailsProps {
 export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
   const [notes, setNotes] = useState(record.notes);
   const debouncedNotes = useDebouncedValue(notes, 500);
+  const latestNotesRef = useRef(notes);
+  const persistedNotesRef = useRef(record.notes);
   const salary = formatTrackerSalary(record.snapshot);
   const isSaving = notes !== record.notes;
+  const titleId = useId();
+  const notesId = useId();
+  const { closeButtonRef, isModal, panelRef } =
+    useDrawerAccessibility(onClose);
+  const sourceUrl = isSafeExternalUrl(record.snapshot.sourceUrl)
+    ? record.snapshot.sourceUrl
+    : null;
 
   useEffect(() => {
     if (debouncedNotes !== record.notes) {
@@ -26,18 +37,38 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
   }, [debouncedNotes, record.notes, record.opportunityId]);
 
   useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
+    persistedNotesRef.current = record.notes;
+  }, [record.notes]);
+
+  useEffect(() => {
+    const opportunityId = record.opportunityId;
+
+    return () => {
+      if (latestNotesRef.current !== persistedNotesRef.current) {
+        trackerStore.setNotes(opportunityId, latestNotesRef.current);
       }
     };
-
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [onClose]);
+  }, [record.opportunityId]);
 
   return (
-    <aside className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-white/[0.08] bg-[#151617] shadow-[-24px_0_80px_rgb(0_0_0/35%)] sm:max-w-[480px] xl:static xl:z-auto xl:max-w-[430px] xl:shrink-0 xl:shadow-none">
+    <>
+      {isModal ? (
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-hidden="true"
+          onClick={onClose}
+          className="fixed inset-0 z-40 cursor-default bg-black/55 backdrop-blur-[1px]"
+        />
+      ) : null}
+      <aside
+        ref={panelRef}
+        role="dialog"
+        aria-modal={isModal || undefined}
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-white/[0.08] bg-[#151617] shadow-[-24px_0_80px_rgb(0_0_0/35%)] outline-none sm:max-w-[480px] xl:static xl:z-auto xl:max-w-[430px] xl:shrink-0 xl:shadow-none"
+      >
       <header className="flex h-[76px] shrink-0 items-center justify-between border-b border-white/[0.07] px-5">
         <div>
           <span className="text-xs font-medium text-zinc-400">
@@ -48,6 +79,7 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
           </span>
         </div>
         <button
+          ref={closeButtonRef}
           type="button"
           onClick={onClose}
           aria-label="Close tracker details"
@@ -61,7 +93,7 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
         <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-zinc-600">
           {record.snapshot.company ?? 'Company not specified'}
         </p>
-        <h2 className="mt-3 text-2xl font-semibold leading-8 tracking-[-0.035em] text-white">
+        <h2 id={titleId} className="mt-3 break-words text-2xl font-semibold leading-8 tracking-[-0.035em] text-white">
           {record.snapshot.title}
         </h2>
 
@@ -89,7 +121,7 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
 
         <section className="mt-7 border-t border-white/[0.07] pt-6">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.11em] text-zinc-500">
+            <h3 id={notesId} className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.11em] text-zinc-500">
               <StickyNote className="h-4 w-4" />
               Personal notes
             </h3>
@@ -104,10 +136,13 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
             </span>
           </div>
           <textarea
+            aria-labelledby={notesId}
             value={notes}
             maxLength={5_000}
             onChange={(event) => {
-              setNotes(event.target.value);
+              const nextNotes = event.target.value;
+              latestNotesRef.current = nextNotes;
+              setNotes(nextNotes);
             }}
             rows={10}
             placeholder="Interview details, contacts, follow-up dates, or anything worth remembering."
@@ -124,11 +159,11 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
       </div>
 
       <footer className="shrink-0 space-y-2 border-t border-white/[0.07] p-4">
-        {record.snapshot.sourceUrl ? (
+        {sourceUrl ? (
           <a
-            href={record.snapshot.sourceUrl}
+            href={sourceUrl}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-radar px-4 py-3 text-sm font-semibold text-[#15170f] hover:bg-lime-300"
           >
             Open vacancy
@@ -147,6 +182,7 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
           Remove from tracker
         </button>
       </footer>
-    </aside>
+      </aside>
+    </>
   );
 }

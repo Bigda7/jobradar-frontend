@@ -1,5 +1,15 @@
 import { z } from 'zod';
 
+import { isSafeExternalUrl } from '../security/external-url';
+
+const shortExternalTextSchema = z.string().max(10_000);
+const longExternalTextSchema = z.string().max(500_000);
+
+export const safeExternalUrlSchema = z
+  .string()
+  .max(2_048)
+  .refine(isSafeExternalUrl, 'Expected an absolute HTTP or HTTPS URL');
+
 export const opportunityKindSchema = z.enum([
   'employment',
   'freelance_project',
@@ -30,39 +40,39 @@ export const jobResponseSchema = z.object({
   id: z.number().int(),
   kind: opportunityKindSchema,
   status: opportunityStatusSchema,
-  title: z.string(),
-  company: z.string().nullable(),
-  description: z.string().nullable(),
-  location_text: z.string().nullable(),
+  title: shortExternalTextSchema,
+  company: shortExternalTextSchema.nullable(),
+  description: longExternalTextSchema.nullable(),
+  location_text: shortExternalTextSchema.nullable(),
   work_mode: workModeSchema,
-  employment_type: z.string().nullable(),
-  contract_type: z.string().nullable(),
+  employment_type: shortExternalTextSchema.nullable(),
+  contract_type: shortExternalTextSchema.nullable(),
   salary_min: decimalStringSchema.nullable(),
   salary_max: decimalStringSchema.nullable(),
-  salary_currency: z.string().nullable(),
-  salary_period: z.string().nullable(),
+  salary_currency: z.string().max(32).nullable(),
+  salary_period: z.string().max(64).nullable(),
   published_at: dateTimeSchema.nullable(),
   first_seen_at: dateTimeSchema,
   last_seen_at: dateTimeSchema,
 });
 
 export const matchResponseSchema = jobResponseSchema.extend({
-  source_url: z.url(),
+  source_url: safeExternalUrlSchema,
   score: z.number().int().min(0).max(100),
-  reasons: z.array(z.string()),
-  concerns: z.array(z.string()),
-  rules_version: z.string(),
+  reasons: z.array(shortExternalTextSchema).max(100),
+  concerns: z.array(shortExternalTextSchema).max(100),
+  rules_version: shortExternalTextSchema,
 });
 
 export const jobListResponseSchema = z.object({
-  items: z.array(jobResponseSchema),
+  items: z.array(jobResponseSchema).max(200),
   total: z.number().int().nonnegative(),
   limit: z.number().int().min(1).max(200),
   offset: z.number().int().nonnegative(),
 });
 
 export const matchListResponseSchema = z.object({
-  items: z.array(matchResponseSchema),
+  items: z.array(matchResponseSchema).max(200),
   total: z.number().int().nonnegative(),
   minimum_score: z.number().int().min(0).max(100),
   limit: z.number().int().min(1).max(200),
@@ -71,16 +81,16 @@ export const matchListResponseSchema = z.object({
 
 export const sourceResponseSchema = z.object({
   id: z.number().int(),
-  name: z.string(),
-  display_name: z.string(),
+  name: shortExternalTextSchema,
+  display_name: shortExternalTextSchema,
   opportunity_kind: opportunityKindSchema,
   enabled: z.boolean(),
   last_run_at: dateTimeSchema.nullable(),
   last_success_at: dateTimeSchema.nullable(),
-  last_error: z.string().nullable(),
+  last_error: longExternalTextSchema.nullable(),
 });
 
-export const sourceListResponseSchema = z.array(sourceResponseSchema);
+export const sourceListResponseSchema = z.array(sourceResponseSchema).max(200);
 
 export const healthResponseSchema = z.object({
   status: z.literal('ok'),

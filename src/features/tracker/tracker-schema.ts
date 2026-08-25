@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-import { opportunityKindSchema, workModeSchema } from '../../api';
+import {
+  opportunityKindSchema,
+  safeExternalUrlSchema,
+  workModeSchema,
+} from '../../api';
 
 export const trackerStorageKey = 'jobradar.tracker.v1';
 
@@ -27,37 +31,37 @@ export const allTrackerStatuses: TrackerStatus[] = [
 ];
 
 export const trackerSnapshotSchema = z.object({
-  title: z.string(),
-  company: z.string().nullable(),
+  title: z.string().max(10_000),
+  company: z.string().max(10_000).nullable(),
   kind: opportunityKindSchema,
   workMode: workModeSchema,
-  salaryMin: z.string().nullable(),
-  salaryMax: z.string().nullable(),
-  salaryCurrency: z.string().nullable(),
-  salaryPeriod: z.string().nullable(),
-  publishedAt: z.string().nullable(),
-  sourceUrl: z.url().optional(),
+  salaryMin: z.string().max(100).nullable(),
+  salaryMax: z.string().max(100).nullable(),
+  salaryCurrency: z.string().max(32).nullable(),
+  salaryPeriod: z.string().max(64).nullable(),
+  publishedAt: z.string().max(100).nullable(),
+  sourceUrl: safeExternalUrlSchema.optional(),
 });
 
 export type TrackerSnapshot = z.infer<typeof trackerSnapshotSchema>;
 
 export const trackerRecordSchema = z.object({
-  opportunityId: z.number().int(),
+  opportunityId: z.number().int().nonnegative(),
   status: trackerStatusSchema,
   notes: z.string().max(5_000),
   snapshot: trackerSnapshotSchema,
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.iso.datetime({ offset: true }),
+  updatedAt: z.iso.datetime({ offset: true }),
 });
 
 export type TrackerRecord = z.infer<typeof trackerRecordSchema>;
 
 const trackerOrderSchema = z.object({
-  saved: z.array(z.string()),
-  applied: z.array(z.string()),
-  interview: z.array(z.string()),
-  offer: z.array(z.string()),
-  archived: z.array(z.string()),
+  saved: z.array(z.string()).max(2_000),
+  applied: z.array(z.string()).max(2_000),
+  interview: z.array(z.string()).max(2_000),
+  offer: z.array(z.string()).max(2_000),
+  archived: z.array(z.string()).max(2_000),
 });
 
 export const trackerStateSchema = z.object({
@@ -89,12 +93,16 @@ export function createEmptyTrackerState(): TrackerState {
 
 function normalizeTrackerState(state: TrackerState): TrackerState {
   const normalized = createEmptyTrackerState();
-  normalized.records = state.records;
+
+  for (const record of Object.values(state.records).slice(0, 2_000)) {
+    normalized.records[String(record.opportunityId)] = record;
+  }
+
   const placed = new Set<string>();
 
   for (const status of allTrackerStatuses) {
     for (const id of state.order[status]) {
-      const record = state.records[id];
+      const record = normalized.records[id];
 
       if (record?.status === status && !placed.has(id)) {
         normalized.order[status].push(id);
@@ -103,7 +111,7 @@ function normalizeTrackerState(state: TrackerState): TrackerState {
     }
   }
 
-  for (const [id, record] of Object.entries(state.records)) {
+  for (const [id, record] of Object.entries(normalized.records)) {
     if (!placed.has(id)) {
       normalized.order[record.status].push(id);
     }
@@ -112,11 +120,72 @@ function normalizeTrackerState(state: TrackerState): TrackerState {
   return normalized;
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function recoverTrackerRecord(value: unknown): TrackerRecord | null {
+  const parsed = trackerRecordSchema.safeParse(value);
+
+  if (parsed.success) {
+    return parsed.data;
+  }
+
+  if (!isObject(value) || !isObject(value.snapshot)) {
+    return null;
+  }
+
+  const snapshot = { ...value.snapshot };
+  delete snapshot.sourceUrl;
+  const withoutUnsafeUrl = trackerRecordSchema.safeParse({
+    ...value,
+    snapshot,
+  });
+
+  return withoutUnsafeUrl.success ? withoutUnsafeUrl.data : null;
+}
+
+function recoverCurrentTrackerState(input: unknown): TrackerState | null {
+  if (!isObject(input) || input.version !== 1 || !isObject(input.records)) {
+    return null;
+  }
+
+  const recovered = createEmptyTrackerState();
+
+  for (const value of Object.values(input.records).slice(0, 2_000)) {
+    const record = recoverTrackerRecord(value);
+
+    if (record) {
+      recovered.records[String(record.opportunityId)] = record;
+    }
+  }
+
+  if (isObject(input.order)) {
+    for (const status of allTrackerStatuses) {
+      const order = input.order[status];
+
+      if (Array.isArray(order)) {
+        recovered.order[status] = order
+          .filter((id): id is string => typeof id === 'string')
+          .slice(0, 2_000);
+      }
+    }
+  }
+
+  return normalizeTrackerState(recovered);
+}
+
 export function migrateTrackerState(input: unknown): TrackerState {
   const current = trackerStateSchema.safeParse(input);
 
   if (current.success) {
     return normalizeTrackerState(current.data);
+  }
+
+  const recovered = recoverCurrentTrackerState(input);
+
+  if (recovered) {
+    return recovered;
   }
 
   const legacy = legacyTrackerStateSchema.safeParse(input);

@@ -69,26 +69,27 @@ function buildRequestUrl(
   return search ? `${url}?${search}` : url;
 }
 
-async function readJson(response: Response): Promise<unknown> {
+interface ResponseBody {
+  data: unknown;
+  malformedJson: boolean;
+}
+
+async function readResponseBody(response: Response): Promise<ResponseBody> {
   const body = await response.text();
 
   if (!body) {
-    return undefined;
+    return { data: undefined, malformedJson: false };
   }
 
   try {
-    return JSON.parse(body) as unknown;
-  } catch (error) {
-    throw new ApiError('The API returned malformed JSON.', {
-      kind: 'invalid-response',
-      status: response.status,
-      cause: error,
-    });
+    return { data: JSON.parse(body) as unknown, malformedJson: false };
+  } catch {
+    return { data: body, malformedJson: true };
   }
 }
 
 function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === 'AbortError';
+  return error instanceof Error && error.name === 'AbortError';
 }
 
 export async function apiRequest<T, TQuery extends object = Record<string, never>>(
@@ -115,17 +116,24 @@ export async function apiRequest<T, TQuery extends object = Record<string, never
     });
   }
 
-  const data = await readJson(response);
+  const body = await readResponseBody(response);
 
   if (!response.ok) {
     throw new ApiError(`API request failed with status ${response.status}.`, {
       kind: 'http',
       status: response.status,
-      details: data,
+      details: body.data,
     });
   }
 
-  const parsed = options.schema.safeParse(data);
+  if (body.malformedJson) {
+    throw new ApiError('The API returned malformed JSON.', {
+      kind: 'invalid-response',
+      status: response.status,
+    });
+  }
+
+  const parsed = options.schema.safeParse(body.data);
 
   if (!parsed.success) {
     throw new ApiError('The API response does not match the expected contract.', {
@@ -136,4 +144,44 @@ export async function apiRequest<T, TQuery extends object = Record<string, never
   }
 
   return parsed.data;
+}
+
+interface ApiErrorMessageOptions {
+  resource: string;
+  validationMessage?: string;
+}
+
+export function getApiErrorMessage(
+  error: unknown,
+  options: ApiErrorMessageOptions,
+): string {
+  if (!(error instanceof ApiError)) {
+    return `${options.resource} could not be loaded. Try again in a moment.`;
+  }
+
+  if (error.kind === 'network') {
+    return 'The API could not be reached. Check your connection, API availability, and CORS configuration.';
+  }
+
+  if (error.kind === 'invalid-response') {
+    return 'The API response does not match the expected contract.';
+  }
+
+  if (error.status === 422) {
+    return options.validationMessage ?? 'The request was rejected by the API.';
+  }
+
+  if (error.status === 429) {
+    return 'The API rate limit was reached. Wait briefly before trying again.';
+  }
+
+  if (error.status === 500 || error.status === 503) {
+    return `The API is temporarily unavailable (${error.status}). Try again in a moment.`;
+  }
+
+  if (error.status !== undefined && error.status >= 500) {
+    return `The API returned a server error (${error.status}). Try again in a moment.`;
+  }
+
+  return `${options.resource} could not be loaded. Try again in a moment.`;
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useId } from 'react';
 import {
   AlertTriangle,
   Building2,
@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 
 import type { MatchResponse } from '../../api';
+import { useDrawerAccessibility } from '../../hooks/use-drawer-accessibility';
+import { isSafeExternalUrl } from '../../security/external-url';
 import { TrackerStatusControl } from '../tracker/tracker-status-control';
 import { formatLabel, formatRelativeDate, formatSalary } from './formatters';
 
@@ -19,23 +21,32 @@ interface MatchDetailsProps {
 
 export function MatchDetails({ match, onClose }: MatchDetailsProps) {
   const salary = formatSalary(match);
-
-  useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [onClose]);
+  const titleId = useId();
+  const { closeButtonRef, isModal, panelRef } =
+    useDrawerAccessibility(onClose);
+  const sourceUrl = isSafeExternalUrl(match.source_url)
+    ? match.source_url
+    : null;
 
   return (
-    <aside
-      aria-label={`Details for ${match.title}`}
-      className="fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-white/[0.08] bg-[#151617] shadow-[-24px_0_80px_rgb(0_0_0/35%)] sm:max-w-[480px] xl:static xl:z-auto xl:max-w-[430px] xl:shrink-0 xl:shadow-none"
-    >
+    <>
+      {isModal ? (
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-hidden="true"
+          onClick={onClose}
+          className="fixed inset-0 z-40 cursor-default bg-black/55 backdrop-blur-[1px]"
+        />
+      ) : null}
+      <aside
+        ref={panelRef}
+        role="dialog"
+        aria-modal={isModal || undefined}
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-white/[0.08] bg-[#151617] shadow-[-24px_0_80px_rgb(0_0_0/35%)] outline-none sm:max-w-[480px] xl:static xl:z-auto xl:max-w-[430px] xl:shrink-0 xl:shadow-none"
+      >
       <div className="flex h-[76px] shrink-0 items-center justify-between border-b border-white/[0.07] px-5">
         <div>
           <span className="text-xs font-medium text-zinc-500">Match details</span>
@@ -44,6 +55,7 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
           </span>
         </div>
         <button
+          ref={closeButtonRef}
           type="button"
           onClick={onClose}
           aria-label="Close match details"
@@ -62,7 +74,7 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
                 {match.company ?? 'Company not specified'}
               </span>
             </div>
-            <h2 className="mt-3 text-2xl font-semibold leading-8 tracking-[-0.035em] text-white">
+            <h2 id={titleId} className="mt-3 break-words text-2xl font-semibold leading-8 tracking-[-0.035em] text-white">
               {match.title}
             </h2>
           </div>
@@ -110,7 +122,7 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
                   className="flex gap-3 text-sm leading-6 text-zinc-300"
                 >
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-radar" />
-                  <span>{reason}</span>
+                  <span className="min-w-0 break-words">{reason}</span>
                 </li>
               ))}
             </ul>
@@ -131,7 +143,7 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
                   className="flex gap-3 text-sm leading-6 text-zinc-300"
                 >
                   <AlertTriangle className="mt-1 h-4 w-4 shrink-0 text-amber-300" />
-                  <span>{concern}</span>
+                  <span className="min-w-0 break-words">{concern}</span>
                 </li>
               ))}
             </ul>
@@ -144,7 +156,7 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
           <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
             Description
           </h3>
-          <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-400">
+          <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-zinc-400">
             {match.description ?? 'No description provided by the source.'}
           </p>
         </section>
@@ -154,17 +166,20 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-white/[0.07] bg-[#151617] p-4">
-        <a
-          href={match.source_url}
-          target="_blank"
-          rel="noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-radar px-4 py-3 text-sm font-semibold text-[#15170f] transition-colors hover:bg-lime-300"
-        >
-          Open vacancy
-          <ExternalLink className="h-4 w-4" />
-        </a>
-      </div>
-    </aside>
+        {sourceUrl ? (
+          <div className="shrink-0 border-t border-white/[0.07] bg-[#151617] p-4">
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-radar px-4 py-3 text-sm font-semibold text-[#15170f] transition-colors hover:bg-lime-300"
+            >
+              Open vacancy
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </div>
+        ) : null}
+      </aside>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { ApiError, apiRequest } from './client';
+import { ApiError, apiRequest, getApiErrorMessage } from './client';
 
 const responseSchema = z.object({ status: z.literal('ok') });
 
@@ -76,5 +76,39 @@ describe('apiRequest', () => {
     await expect(
       apiRequest('/health', { schema: responseSchema }),
     ).rejects.toMatchObject({ kind: 'invalid-response', status: 200 });
+  });
+
+  it('preserves the HTTP status when a server error returns HTML', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('<html>Service unavailable</html>', {
+          status: 503,
+          headers: { 'Content-Type': 'text/html' },
+        }),
+      ),
+    );
+
+    const error = await apiRequest('/jobs', { schema: responseSchema }).catch(
+      (reason: unknown) => reason,
+    );
+
+    expect(error).toMatchObject({ kind: 'http', status: 503 });
+    expect(
+      getApiErrorMessage(error, { resource: 'Jobs' }),
+    ).toContain('temporarily unavailable (503)');
+  });
+
+  it('maps fetch failures to a network error without exposing the cause', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+
+    const error = await apiRequest('/jobs', { schema: responseSchema }).catch(
+      (reason: unknown) => reason,
+    );
+
+    expect(error).toMatchObject({ kind: 'network' });
+    expect(getApiErrorMessage(error, { resource: 'Jobs' })).toContain(
+      'connection, API availability, and CORS',
+    );
   });
 });

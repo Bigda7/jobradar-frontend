@@ -22,7 +22,7 @@ export function JobCard({ job }: JobCardProps) {
           <p className="truncate text-[11px] font-medium uppercase tracking-[0.09em] text-zinc-500">
             {job.company ?? 'Company not specified'}
           </p>
-          <h2 className="mt-2 text-lg font-semibold leading-6 tracking-[-0.025em] text-zinc-100">
+          <h2 className="mt-2 break-words text-lg font-semibold leading-6 tracking-[-0.025em] text-zinc-100">
             {job.title}
           </h2>
         </div>
@@ -51,7 +51,7 @@ export function JobCard({ job }: JobCardProps) {
       </div>
 
       {job.description ? (
-        <p className="mt-4 line-clamp-3 text-sm leading-6 text-zinc-500">
+        <p className="mt-4 line-clamp-3 break-words text-sm leading-6 text-zinc-500">
           {job.description}
         </p>
       ) : (

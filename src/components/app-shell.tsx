@@ -12,6 +12,7 @@ import { ApiReadyIndicator } from './api-ready-indicator';
 import { CommandPalette } from './command-palette';
 import {
   getActiveTrackerCount,
+  startTrackerStorageSync,
   useTrackerState,
 } from '../features/tracker/tracker-store';
 
@@ -43,6 +44,8 @@ export function AppShell({ children, matchCount }: AppShellProps) {
     window.addEventListener('keydown', openCommandPalette);
     return () => window.removeEventListener('keydown', openCommandPalette);
   }, []);
+
+  useEffect(() => startTrackerStorageSync(), []);
 
   return (
     <div className="min-h-screen bg-canvas text-zinc-100 lg:grid lg:h-screen lg:grid-cols-[248px_minmax(0,1fr)] lg:overflow-hidden">

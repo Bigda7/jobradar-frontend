@@ -120,6 +120,7 @@ export function TrackerPage() {
                 <button
                   type="button"
                   onClick={() => setView('pipeline')}
+                  aria-pressed={view === 'pipeline'}
                   className={`flex h-8 items-center gap-2 rounded-lg px-3 text-xs ${
                     view === 'pipeline'
                       ? 'bg-white/[0.08] text-radar'
@@ -132,6 +133,7 @@ export function TrackerPage() {
                 <button
                   type="button"
                   onClick={() => setView('archived')}
+                  aria-pressed={view === 'archived'}
                   className={`flex h-8 items-center gap-2 rounded-lg px-3 text-xs ${
                     view === 'archived'
                       ? 'bg-white/[0.08] text-radar'
@@ -175,7 +177,7 @@ export function TrackerPage() {
                 collisionDetection={closestCorners}
                 onDragEnd={handleDragEnd}
               >
-                <div className="grid gap-4 p-4 sm:p-6 lg:h-full lg:grid-cols-4">
+                <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-6 xl:h-full xl:grid-cols-4">
                   {pipelineStatuses.map((status) => {
                     const records = trackerState.order[status]
                       .map((id) => trackerState.records[id])

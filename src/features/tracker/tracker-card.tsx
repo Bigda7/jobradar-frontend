@@ -53,7 +53,7 @@ export function TrackerCard({
           <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.09em] text-zinc-600">
             {record.snapshot.company ?? 'Company not specified'}
           </span>
-          <h3 className="mt-2 line-clamp-2 text-sm font-semibold leading-5 text-zinc-100">
+          <h3 className="mt-2 line-clamp-2 break-words text-sm font-semibold leading-5 text-zinc-100">
             {record.snapshot.title}
           </h3>
         </button>

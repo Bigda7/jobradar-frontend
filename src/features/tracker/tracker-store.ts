@@ -43,7 +43,15 @@ export interface TrackerStore {
 }
 
 function getBrowserStorage(): TrackerStorage | null {
-  return typeof window === 'undefined' ? null : window.localStorage;
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }
 
 function createSnapshot(opportunity: Opportunity): TrackerSnapshot {
@@ -224,12 +232,31 @@ export function createTrackerStore(
 
 export const trackerStore = createTrackerStore();
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (event) => {
-    if (event.key === trackerStorageKey && event.storageArea === window.localStorage) {
-      trackerStore.applySerializedState(event.newValue);
+export function startTrackerStorageSync(
+  store: TrackerStore = trackerStore,
+): () => void {
+  if (typeof window === 'undefined') {
+    return () => undefined;
+  }
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key !== trackerStorageKey) {
+      return;
     }
-  });
+
+    try {
+      if (event.storageArea && event.storageArea !== window.localStorage) {
+        return;
+      }
+    } catch {
+      return;
+    }
+
+    store.applySerializedState(event.newValue);
+  };
+
+  window.addEventListener('storage', handleStorage);
+  return () => window.removeEventListener('storage', handleStorage);
 }
 
 export function useTrackerState(): TrackerState {

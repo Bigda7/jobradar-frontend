@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { JobResponse, MatchResponse } from '../../api';
 import {
@@ -8,8 +8,13 @@ import {
 } from './tracker-schema';
 import {
   createTrackerStore,
+  startTrackerStorageSync,
   type TrackerStorage,
 } from './tracker-store';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 class MemoryStorage implements TrackerStorage {
   private readonly values = new Map<string, string>();
@@ -172,5 +177,84 @@ describe('tracker store', () => {
     const store = createTrackerStore({ storage });
 
     expect(store.getState().records).toEqual({});
+  });
+
+  it('does not crash when storage access throws', () => {
+    const storage: TrackerStorage = {
+      getItem: () => {
+        throw new Error('Storage is blocked');
+      },
+      setItem: () => {
+        throw new Error('Storage is blocked');
+      },
+    };
+
+    const store = createTrackerStore({ storage });
+
+    expect(store.getState().records).toEqual({});
+    expect(() => store.saveOpportunity(createJob())).not.toThrow();
+    expect(store.getState().records['42']).toBeDefined();
+  });
+
+  it('removes an unsafe stored URL while preserving the tracker record', () => {
+    const storage = new MemoryStorage();
+    const sourceStore = createTrackerStore({
+      storage,
+      now: () => '2026-08-25T12:00:00Z',
+    });
+    sourceStore.saveOpportunity(createMatch());
+    const serialized = JSON.parse(
+      storage.getItem(trackerStorageKey)!,
+    ) as {
+      records: Record<string, TrackerRecord>;
+    };
+    serialized.records['42'].snapshot.sourceUrl = 'javascript:alert(1)';
+    storage.setItem(trackerStorageKey, JSON.stringify(serialized));
+
+    const recoveredStore = createTrackerStore({ storage });
+
+    expect(recoveredStore.getState().records['42']).toBeDefined();
+    expect(recoveredStore.getState().records['42'].snapshot.sourceUrl).toBeUndefined();
+  });
+
+  it('salvages valid records when another stored record is invalid', () => {
+    const storage = new MemoryStorage();
+    const sourceStore = createTrackerStore({
+      storage,
+      now: () => '2026-08-25T12:00:00Z',
+    });
+    sourceStore.saveOpportunity(createJob({ id: 1 }));
+    sourceStore.saveOpportunity(createJob({ id: 2 }));
+    const serialized = JSON.parse(
+      storage.getItem(trackerStorageKey)!,
+    ) as {
+      records: Record<string, TrackerRecord>;
+    };
+    serialized.records['2'].notes = 'x'.repeat(5_001);
+    storage.setItem(trackerStorageKey, JSON.stringify(serialized));
+
+    const recoveredStore = createTrackerStore({ storage });
+
+    expect(recoveredStore.getState().records['1']).toBeDefined();
+    expect(recoveredStore.getState().records['2']).toBeUndefined();
+  });
+
+  it('returns a cleanup function for cross-tab storage synchronization', () => {
+    const addEventListener = vi.fn();
+    const removeEventListener = vi.fn();
+    vi.stubGlobal('window', {
+      localStorage: new MemoryStorage(),
+      addEventListener,
+      removeEventListener,
+    });
+
+    const stop = startTrackerStorageSync(
+      createTrackerStore({ storage: new MemoryStorage() }),
+    );
+    const handler = addEventListener.mock.calls[0][1];
+
+    expect(addEventListener).toHaveBeenCalledWith('storage', handler);
+    stop();
+    expect(removeEventListener).toHaveBeenCalledWith('storage', handler);
   });
 });

@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
+  getApiErrorMessage,
   getJobs,
   type MatchListResponse,
   type MatchResponse,
@@ -179,6 +180,23 @@ export function CommandPalette({
                     <div className="flex items-center gap-2 px-3 py-4 text-xs font-normal normal-case tracking-normal text-zinc-600">
                       <LoaderCircle className="h-4 w-4 animate-spin text-radar" />
                       Searching remote jobs
+                    </div>
+                  ) : remoteJobsQuery.isError ? (
+                    <div className="px-3 py-4 text-xs font-normal normal-case tracking-normal text-rose-300">
+                      <p>
+                        {getApiErrorMessage(remoteJobsQuery.error, {
+                          resource: 'Remote jobs',
+                          validationMessage:
+                            'The remote job search was rejected by the API.',
+                        })}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => remoteJobsQuery.refetch()}
+                        className="mt-3 rounded-lg border border-white/[0.08] px-3 py-1.5 text-zinc-300 hover:bg-white/[0.05]"
+                      >
+                        Try again
+                      </button>
                     </div>
                   ) : remoteJobsQuery.data?.items.length ? (
                     remoteJobsQuery.data.items.map((job) => (

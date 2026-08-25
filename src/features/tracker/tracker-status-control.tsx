@@ -8,7 +8,6 @@ import {
 } from './tracker-store';
 import type { TrackerStatus } from './tracker-schema';
 import {
-  trackerStatusSelectOptions,
   trackerStatusSelectOptionsWithRemove,
 } from './tracker-config';
 

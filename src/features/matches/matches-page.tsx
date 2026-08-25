@@ -7,11 +7,11 @@ import {
   RefreshCw,
   SlidersHorizontal,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import {
-  ApiError,
+  getApiErrorMessage,
   getMatches,
   queryKeys,
   type MatchResponse,
@@ -101,24 +101,6 @@ const tierChips: { value: MatchTierFocus; label: string }[] = [
 const pageSize = 50;
 const emptyMatches: MatchResponse[] = [];
 
-function getErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.kind === 'network') {
-      return 'The API could not be reached. Confirm that the local backend is running.';
-    }
-
-    if (error.status === 422) {
-      return 'The score filter was rejected by the API.';
-    }
-
-    if (error.kind === 'invalid-response') {
-      return 'The API response does not match the documented contract.';
-    }
-  }
-
-  return 'Matches could not be loaded. Try again in a moment.';
-}
-
 export function MatchesPage() {
   const [minimumScore, setMinimumScore] = useState(55);
   const [offset, setOffset] = useState(0);
@@ -138,9 +120,13 @@ export function MatchesPage() {
 
   const items = matchesQuery.data?.items ?? emptyMatches;
   const total = matchesQuery.data?.total;
-  const requestedId = Number(searchParams.get('opportunity'));
+  const requestedOpportunity = searchParams.get('opportunity');
+  const requestedId =
+    requestedOpportunity && /^\d+$/.test(requestedOpportunity)
+      ? Number(requestedOpportunity)
+      : null;
   const effectiveSelectedId =
-    selectedId ?? (Number.isInteger(requestedId) ? requestedId : null);
+    selectedId ?? requestedId;
   const selectedMatch =
     effectiveSelectedId === null
       ? null
@@ -161,12 +147,24 @@ export function MatchesPage() {
   const rulesVersion = items[0]?.rules_version;
   const hasPreviousPage = offset > 0;
   const hasNextPage = total !== undefined && offset + pageSize < total;
+  const lastOffset =
+    total === undefined || total === 0
+      ? 0
+      : Math.floor((total - 1) / pageSize) * pageSize;
+  const isOffsetOutOfRange = total !== undefined && offset > lastOffset;
+
+  const clearSelection = useCallback(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('opportunity');
+    setSearchParams(nextParams, { replace: true });
+    setSelectedId(null);
+  }, [searchParams, setSearchParams]);
 
   const selectMinimumScore = (value: number) => {
     setMinimumScore(value);
     setOffset(0);
-    setSelectedId(null);
     setTierFocus('all');
+    clearSelection();
   };
 
   const selectTier = (tier: MatchTierFocus) => {
@@ -178,22 +176,17 @@ export function MatchesPage() {
     }
 
     setTierFocus(tier);
-    setSelectedId(null);
+    clearSelection();
   };
 
   const openMatch = (match: MatchResponse) => {
     const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete('opportunity');
+    nextParams.set('opportunity', String(match.id));
     setSearchParams(nextParams, { replace: true });
     setSelectedId(match.id);
   };
 
-  const closeMatch = () => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete('opportunity');
-    setSearchParams(nextParams, { replace: true });
-    setSelectedId(null);
-  };
+  const closeMatch = clearSelection;
 
   return (
     <AppShell matchCount={total}>
@@ -291,7 +284,7 @@ export function MatchesPage() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
+              <div className="grid w-full grid-cols-2 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] sm:w-auto sm:grid-cols-4">
                 {[
                   ['Top score', metrics.topScore ?? '—'],
                   ['Remote', `${metrics.remotePercentage}%`],
@@ -300,7 +293,7 @@ export function MatchesPage() {
                 ].map(([label, value]) => (
                   <div
                     key={label}
-                    className="min-w-20 border-l border-white/[0.05] px-3 py-2 first:border-l-0"
+                    className="min-w-0 border-l border-white/[0.05] px-3 py-2 first:border-l-0"
                   >
                     <span className="block text-[9px] uppercase tracking-[0.09em] text-zinc-700">
                       {label}
@@ -332,7 +325,11 @@ export function MatchesPage() {
                     Unable to load matches
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-zinc-500">
-                    {getErrorMessage(matchesQuery.error)}
+                    {getApiErrorMessage(matchesQuery.error, {
+                      resource: 'Matches',
+                      validationMessage:
+                        'The score filter was rejected by the API.',
+                    })}
                   </p>
                   <button
                     type="button"
@@ -367,8 +364,22 @@ export function MatchesPage() {
                     No matches at this score
                   </h2>
                   <p className="mt-2 text-sm text-zinc-600">
-                    Lower the minimum score to widen the result set.
+                    {isOffsetOutOfRange
+                      ? 'The result set changed and this page no longer exists.'
+                      : 'Lower the minimum score to widen the result set.'}
                   </p>
+                  {isOffsetOutOfRange ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOffset(lastOffset);
+                        clearSelection();
+                      }}
+                      className="mt-5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-sm text-zinc-200 hover:bg-white/[0.07]"
+                    >
+                      Open last available page
+                    </button>
+                  ) : null}
                 </div>
               </div>
             ) : focusedItems.length === 0 ? (
@@ -383,7 +394,7 @@ export function MatchesPage() {
                 </div>
               </div>
             ) : viewMode === 'board' ? (
-              <div className="grid min-w-max grid-flow-col auto-cols-[minmax(288px,1fr)] gap-3 p-4 sm:p-5 lg:min-w-0 lg:p-6">
+              <div className="grid gap-3 p-4 sm:p-5 lg:min-w-max lg:grid-flow-col lg:auto-cols-[minmax(288px,1fr)] lg:p-6 2xl:min-w-0">
                 {visibleTiers.map((tier) => {
                   const tierItems = focusedItems.filter(
                     (match) => match.score >= tier.min && match.score <= tier.max,
@@ -452,15 +463,21 @@ export function MatchesPage() {
                 <button
                   type="button"
                   disabled={!hasPreviousPage}
-                  onClick={() => setOffset(Math.max(0, offset - pageSize))}
+                  onClick={() => {
+                    setOffset(Math.max(0, offset - pageSize));
+                    clearSelection();
+                  }}
                   className="rounded-lg border border-white/[0.07] px-3 py-1.5 text-zinc-400 disabled:cursor-not-allowed disabled:opacity-30"
                 >
                   Previous
                 </button>
                 <button
                   type="button"
-                  disabled={!hasNextPage}
-                  onClick={() => setOffset(offset + pageSize)}
+                  disabled={!hasNextPage || matchesQuery.isPlaceholderData}
+                  onClick={() => {
+                    setOffset(offset + pageSize);
+                    clearSelection();
+                  }}
                   className="rounded-lg border border-white/[0.07] px-3 py-1.5 text-zinc-400 disabled:cursor-not-allowed disabled:opacity-30"
                 >
                   Next
