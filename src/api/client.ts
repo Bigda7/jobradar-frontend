@@ -1,0 +1,139 @@
+import type { ZodType } from 'zod';
+
+import { fastApiValidationErrorSchema } from './schemas';
+import type { FastApiValidationError } from './types';
+
+type QueryValue = string | number | boolean | null | undefined;
+
+export type ApiErrorKind = 'http' | 'network' | 'invalid-response';
+
+interface ApiErrorOptions {
+  kind: ApiErrorKind;
+  status?: number;
+  details?: unknown;
+  cause?: unknown;
+}
+
+export class ApiError extends Error {
+  readonly kind: ApiErrorKind;
+  readonly status?: number;
+  readonly details?: unknown;
+
+  constructor(message: string, options: ApiErrorOptions) {
+    super(message, { cause: options.cause });
+    this.name = 'ApiError';
+    this.kind = options.kind;
+    this.status = options.status;
+    this.details = options.details;
+  }
+
+  get validationError(): FastApiValidationError | null {
+    if (this.status !== 422) {
+      return null;
+    }
+
+    const result = fastApiValidationErrorSchema.safeParse(this.details);
+    return result.success ? result.data : null;
+  }
+}
+
+interface ApiRequestOptions<T, TQuery extends object> {
+  schema: ZodType<T>;
+  query?: TQuery;
+  signal?: AbortSignal;
+}
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() || '/api';
+
+function buildRequestUrl(
+  path: string,
+  query?: object,
+): string {
+  const base = apiBaseUrl.replace(/\/+$/, '');
+  const endpoint = path.replace(/^\/+/, '');
+  const url = `${base}/${endpoint}`;
+
+  if (!query) {
+    return url;
+  }
+
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query) as [string, QueryValue][]) {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.set(key, String(value));
+    }
+  }
+
+  const search = searchParams.toString();
+  return search ? `${url}?${search}` : url;
+}
+
+async function readJson(response: Response): Promise<unknown> {
+  const body = await response.text();
+
+  if (!body) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(body) as unknown;
+  } catch (error) {
+    throw new ApiError('The API returned malformed JSON.', {
+      kind: 'invalid-response',
+      status: response.status,
+      cause: error,
+    });
+  }
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
+}
+
+export async function apiRequest<T, TQuery extends object = Record<string, never>>(
+  path: string,
+  options: ApiRequestOptions<T, TQuery>,
+): Promise<T> {
+  const url = buildRequestUrl(path, options.query);
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: options.signal,
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+
+    throw new ApiError('Unable to reach the API.', {
+      kind: 'network',
+      cause: error,
+    });
+  }
+
+  const data = await readJson(response);
+
+  if (!response.ok) {
+    throw new ApiError(`API request failed with status ${response.status}.`, {
+      kind: 'http',
+      status: response.status,
+      details: data,
+    });
+  }
+
+  const parsed = options.schema.safeParse(data);
+
+  if (!parsed.success) {
+    throw new ApiError('The API response does not match the expected contract.', {
+      kind: 'invalid-response',
+      status: response.status,
+      details: parsed.error.issues,
+    });
+  }
+
+  return parsed.data;
+}

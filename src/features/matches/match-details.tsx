@@ -1,0 +1,170 @@
+import { useEffect } from 'react';
+import {
+  AlertTriangle,
+  Building2,
+  CheckCircle2,
+  ExternalLink,
+  MapPin,
+  X,
+} from 'lucide-react';
+
+import type { MatchResponse } from '../../api';
+import { TrackerStatusControl } from '../tracker/tracker-status-control';
+import { formatLabel, formatRelativeDate, formatSalary } from './formatters';
+
+interface MatchDetailsProps {
+  match: MatchResponse;
+  onClose: () => void;
+}
+
+export function MatchDetails({ match, onClose }: MatchDetailsProps) {
+  const salary = formatSalary(match);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [onClose]);
+
+  return (
+    <aside
+      aria-label={`Details for ${match.title}`}
+      className="fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-white/[0.08] bg-[#151617] shadow-[-24px_0_80px_rgb(0_0_0/35%)] sm:max-w-[480px] xl:static xl:z-auto xl:max-w-[430px] xl:shrink-0 xl:shadow-none"
+    >
+      <div className="flex h-[76px] shrink-0 items-center justify-between border-b border-white/[0.07] px-5">
+        <div>
+          <span className="text-xs font-medium text-zinc-500">Match details</span>
+          <span className="mt-1 block text-[11px] text-zinc-700">
+            {formatRelativeDate(match.published_at)}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close match details"
+          className="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.07] text-zinc-500 hover:bg-white/[0.05] hover:text-white"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="premium-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500">
+              <Building2 className="h-3.5 w-3.5" />
+              <span className="truncate">
+                {match.company ?? 'Company not specified'}
+              </span>
+            </div>
+            <h2 className="mt-3 text-2xl font-semibold leading-8 tracking-[-0.035em] text-white">
+              {match.title}
+            </h2>
+          </div>
+          <span className="shrink-0 rounded-xl bg-radar px-3 py-2 text-sm font-bold text-[#15170f]">
+            {match.score}%
+          </span>
+        </div>
+
+        <div className="mt-5">
+          <TrackerStatusControl opportunity={match} />
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          <span className="rounded-full border border-white/[0.07] bg-white/[0.04] px-2.5 py-1.5 text-xs text-zinc-300">
+            {formatLabel(match.work_mode)}
+          </span>
+          {match.employment_type ? (
+            <span className="rounded-full border border-white/[0.07] bg-white/[0.04] px-2.5 py-1.5 text-xs text-zinc-300">
+              {formatLabel(match.employment_type)}
+            </span>
+          ) : null}
+          {salary ? (
+            <span className="rounded-full border border-amber-200/10 bg-amber-200/90 px-2.5 py-1.5 text-xs font-medium text-amber-950">
+              {salary}
+            </span>
+          ) : null}
+        </div>
+
+        {match.location_text ? (
+          <div className="mt-4 flex items-center gap-2 text-sm text-zinc-500">
+            <MapPin className="h-4 w-4" />
+            <span>{match.location_text}</span>
+          </div>
+        ) : null}
+
+        <section className="mt-7 border-t border-white/[0.07] pt-6">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+            Why it matches
+          </h3>
+          {match.reasons.length > 0 ? (
+            <ul className="mt-4 space-y-3">
+              {match.reasons.map((reason) => (
+                <li
+                  key={reason}
+                  className="flex gap-3 text-sm leading-6 text-zinc-300"
+                >
+                  <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-radar" />
+                  <span>{reason}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-zinc-600">No reasons provided.</p>
+          )}
+        </section>
+
+        <section className="mt-7 border-t border-white/[0.07] pt-6">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+            Concerns
+          </h3>
+          {match.concerns.length > 0 ? (
+            <ul className="mt-4 space-y-3">
+              {match.concerns.map((concern) => (
+                <li
+                  key={concern}
+                  className="flex gap-3 text-sm leading-6 text-zinc-300"
+                >
+                  <AlertTriangle className="mt-1 h-4 w-4 shrink-0 text-amber-300" />
+                  <span>{concern}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-zinc-600">No concerns provided.</p>
+          )}
+        </section>
+
+        <section className="mt-7 border-t border-white/[0.07] pt-6">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+            Description
+          </h3>
+          <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-400">
+            {match.description ?? 'No description provided by the source.'}
+          </p>
+        </section>
+
+        <div className="mt-7 border-t border-white/[0.07] pt-5 text-[11px] text-zinc-700">
+          Rules: {match.rules_version}
+        </div>
+      </div>
+
+      <div className="shrink-0 border-t border-white/[0.07] bg-[#151617] p-4">
+        <a
+          href={match.source_url}
+          target="_blank"
+          rel="noreferrer"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-radar px-4 py-3 text-sm font-semibold text-[#15170f] transition-colors hover:bg-lime-300"
+        >
+          Open vacancy
+          <ExternalLink className="h-4 w-4" />
+        </a>
+      </div>
+    </aside>
+  );
+}
