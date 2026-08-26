@@ -209,4 +209,10 @@ src/
 - Handoff documents, local environment files, database dumps, private keys, generated output, and `.openai/` metadata are excluded through `.gitignore`.
 - Review `git status` before every commit.
 - Run a secret scanner in CI in addition to dependency auditing.
-- Add an appropriate `LICENSE` file before accepting external contributions or redistribution.
+
+## License
+
+The JobRadar source code is available under the [MIT License](LICENSE).
+
+Job listings, company names, trademarks, logos, and data obtained from external services remain
+the property of their respective owners and are not relicensed by this project.
