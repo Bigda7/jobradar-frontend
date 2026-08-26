@@ -4,6 +4,9 @@ JobRadar Frontend is a responsive web application for discovering job opportunit
 
 The project uses strict runtime validation at API and storage boundaries, route-level code splitting, accessible UI primitives, and a security-focused deployment configuration.
 
+- **Live application:** https://jobradar-frontend-pink.vercel.app
+- **Service status:** https://stats.uptimerobot.com/pbYg91DSyR
+
 ## Features
 
 - **Matches feed** — Browse deterministically scored opportunities grouped into Top (`85–100`), Strong (`70–84`), Good (`55–69`), and Below Target tiers. Switch between board and compact list views, sort the loaded page, and inspect reasons, concerns, descriptions, and verified vacancy links in a details drawer.
