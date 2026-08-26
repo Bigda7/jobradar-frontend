@@ -13,6 +13,11 @@ import { NavLink } from 'react-router-dom';
 import { ApiReadyIndicator } from './api-ready-indicator';
 import { CommandPalette } from './command-palette';
 import {
+  getCommandPaletteShortcutLabel,
+  isMacPlatform,
+  matchesCommandPaletteShortcut,
+} from './command-shortcut';
+import {
   getActiveTrackerCount,
   startTrackerStorageSync,
   useTrackerState,
@@ -36,10 +41,12 @@ export function AppShell({ children, matchCount }: AppShellProps) {
   const trackerState = useTrackerState();
   const trackedCount = getActiveTrackerCount(trackerState);
   const [commandOpen, setCommandOpen] = useState(false);
+  const isMac = isMacPlatform(navigator.userAgent);
+  const commandShortcutLabel = getCommandPaletteShortcutLabel(isMac);
 
   useEffect(() => {
     const openCommandPalette = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      if (matchesCommandPaletteShortcut(event, isMac)) {
         event.preventDefault();
         setCommandOpen(true);
       }
@@ -47,7 +54,7 @@ export function AppShell({ children, matchCount }: AppShellProps) {
 
     window.addEventListener('keydown', openCommandPalette);
     return () => window.removeEventListener('keydown', openCommandPalette);
-  }, []);
+  }, [isMac]);
 
   useEffect(() => startTrackerStorageSync(), []);
 
@@ -77,7 +84,7 @@ export function AppShell({ children, matchCount }: AppShellProps) {
             <Search className="h-3.5 w-3.5" />
             <span>Quick search</span>
             <kbd className="ml-auto rounded border border-white/[0.07] px-1.5 py-0.5 text-[9px] text-zinc-700">
-              ⌘ K
+              {commandShortcutLabel}
             </kbd>
           </button>
         </div>

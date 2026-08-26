@@ -40,7 +40,7 @@ The browser communicates only with same-origin `/api` endpoints. Vercel Function
 - **Job catalog** — Search the complete catalog with a debounced query, work mode, employment type, minimum salary, and pagination controls.
 - **Source monitoring** — Review each configured source, its enabled state, last run, last successful run, and the latest reported error without synthetic health labels.
 - **Application tracker** — Manage a local Kanban pipeline: `Saved -> Applied -> Interview -> Offer`, with a separate archive, drag-and-drop movement, accessible status controls, job snapshots, autosaved notes, and cross-tab synchronization.
-- **Command palette** — Use `Cmd+K` or `Ctrl+K` to navigate between sections, search loaded matches, and query remote jobs.
+- **Command palette** — Use `Cmd+K` on macOS or `Ctrl+/` on Windows and Linux to navigate between sections, search loaded matches, and query remote jobs.
 - **Responsive dark interface** — Includes keyboard-accessible dialogs and drawers, focus management, reduced-motion support, and layouts tested down to a 320 px viewport.
 
 ## Technology Stack
