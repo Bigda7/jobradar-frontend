@@ -1,11 +1,38 @@
 # JobRadar Frontend
 
-JobRadar Frontend is a responsive web application for discovering job opportunities, reviewing ranked matches, monitoring ingestion sources, and managing a private application pipeline in the browser.
+Production React client for JobRadar, a self-hosted job intelligence platform that collects remote opportunities, scores them against a deterministic profile, and turns the results into an actionable application workflow.
 
-The project uses strict runtime validation at API and storage boundaries, route-level code splitting, accessible UI primitives, and a security-focused deployment configuration.
+The interface combines ranked matches, a searchable job catalog, source monitoring, and a device-local Kanban tracker. It uses strict runtime validation at API and storage boundaries, route-level code splitting, accessible UI primitives, and a security-focused deployment configuration.
 
-- **Live application:** https://jobradar-frontend-pink.vercel.app
-- **Service status:** https://stats.uptimerobot.com/pbYg91DSyR
+| Resource | Link |
+| --- | --- |
+| Live application | [Open JobRadar](https://jobradar-frontend-pink.vercel.app) |
+| Service status | [View live uptime](https://stats.uptimerobot.com/pbYg91DSyR) |
+| Backend repository | [Bigda7/jobradar](https://github.com/Bigda7/jobradar) |
+
+## Portfolio Highlights
+
+- Built and deployed a responsive React 19 SPA with four production routes and explicit loading, empty, partial-failure, and error states.
+- Designed a backend-for-frontend layer with allowlisted Vercel Functions so the browser never receives the upstream API bearer token.
+- Validates remote API responses and local persisted state with Zod before data reaches the UI.
+- Implements a local application CRM with drag-and-drop, accessible status controls, notes, archive, schema migration, corruption recovery, and cross-tab synchronization.
+- Ships through GitHub Actions with locked dependencies, tests, type checking, linting, production builds, dependency auditing, and secret scanning.
+- Runs behind Vercel security headers and edge rate limiting, with independent monitoring for the frontend, backend, and full proxy path.
+
+## Production Architecture
+
+```mermaid
+flowchart LR
+    User[Browser] --> SPA[React SPA on Vercel]
+    SPA --> Proxy[Allowlisted Vercel Functions]
+    Proxy -->|TLS and server-side bearer token| API[Caddy and FastAPI on AWS]
+    API --> DB[(Private PostgreSQL)]
+    Monitor[UptimeRobot] --> SPA
+    Monitor --> Proxy
+    Monitor --> API
+```
+
+The browser communicates only with same-origin `/api` endpoints. Vercel Functions add the backend credential on the server, validate the upstream response type and size, and expose only the read-only routes used by the application.
 
 ## Features
 
