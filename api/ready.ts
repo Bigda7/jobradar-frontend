@@ -1,4 +1,4 @@
-import { proxyJobRadar } from './_proxy';
+import { proxyJobRadar } from './_proxy.js';
 
 export function GET(request: Request): Promise<Response> {
   return proxyJobRadar(request, '/ready');
