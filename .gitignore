@@ -35,10 +35,8 @@ yarn-error.log*
 /outputs/
 /work/
 *.tsbuildinfo
-.openai/
 
-# private handoffs and backups
-*HANDOFF*.md
+# local backups and data
 *.dump
 *.sql
 *.db

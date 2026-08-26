@@ -105,7 +105,6 @@ Open `http://localhost:5173`. With the default environment value, requests to `/
 | --- | --- | --- | --- |
 | `JOBRADAR_API_ORIGIN` | `http://localhost:8000` | `https://api.yourdomain.com` | Server-side proxy target |
 | `JOBRADAR_API_TOKEN` | empty when backend auth is disabled | random shared token | Server-side bearer token |
-| `OPENAI_SITES` | `false` | `false` on Vercel | Enable the OpenAI Sites development capability only when requested |
 
 The browser always requests same-origin `/api`. In local development, Vite forwards those requests.
 On Vercel, explicit serverless functions forward an allowlisted set of read-only endpoints and add
@@ -206,7 +205,7 @@ src/
 
 ## Publication Notes
 
-- Handoff documents, local environment files, database dumps, private keys, generated output, and `.openai/` metadata are excluded through `.gitignore`.
+- Local environment files, database dumps, private keys, and generated output are excluded through `.gitignore`.
 - Review `git status` before every commit.
 - Run a secret scanner in CI in addition to dependency auditing.
 
