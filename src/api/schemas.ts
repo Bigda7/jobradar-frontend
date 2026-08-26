@@ -54,10 +54,10 @@ export const jobResponseSchema = z.object({
   published_at: dateTimeSchema.nullable(),
   first_seen_at: dateTimeSchema,
   last_seen_at: dateTimeSchema,
+  source_url: safeExternalUrlSchema,
 });
 
 export const matchResponseSchema = jobResponseSchema.extend({
-  source_url: safeExternalUrlSchema,
   score: z.number().int().min(0).max(100),
   reasons: z.array(shortExternalTextSchema).max(100),
   concerns: z.array(shortExternalTextSchema).max(100),

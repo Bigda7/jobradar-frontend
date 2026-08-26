@@ -111,4 +111,18 @@ describe('apiRequest', () => {
       'connection, API availability, and CORS',
     );
   });
+
+  it('classifies request timeouts as network errors', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new DOMException('Timed out', 'TimeoutError')),
+    );
+
+    const error = await apiRequest('/jobs', { schema: responseSchema }).catch(
+      (reason: unknown) => reason,
+    );
+
+    expect(error).toMatchObject({ kind: 'network', message: 'API request timed out.' });
+    expect(getApiErrorMessage(error, { resource: 'Jobs' })).toContain('timed out');
+  });
 });

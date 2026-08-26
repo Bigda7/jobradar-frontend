@@ -1,6 +1,7 @@
-import { CalendarDays, MapPin } from 'lucide-react';
+import { CalendarDays, ExternalLink, MapPin } from 'lucide-react';
 
 import type { JobResponse } from '../../api';
+import { isSafeExternalUrl } from '../../security/external-url';
 import {
   formatLabel,
   formatRelativeDate,
@@ -14,6 +15,7 @@ interface JobCardProps {
 
 export function JobCard({ job }: JobCardProps) {
   const salary = formatSalary(job);
+  const sourceUrl = isSafeExternalUrl(job.source_url) ? job.source_url : null;
 
   return (
     <article className="rounded-2xl border border-white/[0.07] bg-card p-5 transition-colors hover:border-white/[0.12] hover:bg-[#292a2d]">
@@ -70,6 +72,17 @@ export function JobCard({ job }: JobCardProps) {
             <MapPin className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">{job.location_text}</span>
           </span>
+        ) : null}
+        {sourceUrl ? (
+          <a
+            href={sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto inline-flex items-center gap-1.5 text-zinc-400 transition-colors hover:text-radar"
+          >
+            Open source
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
         ) : null}
       </footer>
     </article>

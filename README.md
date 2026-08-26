@@ -6,7 +6,7 @@ The project uses strict runtime validation at API and storage boundaries, route-
 
 ## Features
 
-- **Matches feed** — Browse AI-scored opportunities grouped into Top (`85–100`), Strong (`70–84`), Good (`55–69`), and Below Target tiers. Switch between board and compact list views, sort the loaded page, and inspect reasons, concerns, descriptions, and verified vacancy links in a details drawer.
+- **Matches feed** — Browse deterministically scored opportunities grouped into Top (`85–100`), Strong (`70–84`), Good (`55–69`), and Below Target tiers. Switch between board and compact list views, sort the loaded page, and inspect reasons, concerns, descriptions, and verified vacancy links in a details drawer.
 - **Job catalog** — Search the complete catalog with a debounced query, work mode, employment type, minimum salary, and pagination controls.
 - **Source monitoring** — Review each configured source, its enabled state, last run, last successful run, and the latest reported error without synthetic health labels.
 - **Application tracker** — Manage a local Kanban pipeline: `Saved -> Applied -> Interview -> Offer`, with a separate archive, drag-and-drop movement, accessible status controls, job snapshots, autosaved notes, and cross-tab synchronization.
@@ -73,9 +73,14 @@ Open `http://localhost:5173`. With the default environment value, requests to `/
 
 | Variable | Local value | Production example | Purpose |
 | --- | --- | --- | --- |
-| `VITE_API_BASE_URL` | `/api` | `https://api.yourdomain.com` | Base URL for the JobRadar REST API |
+| `JOBRADAR_API_ORIGIN` | `http://localhost:8000` | `https://api.yourdomain.com` | Server-side proxy target |
+| `JOBRADAR_API_TOKEN` | empty when backend auth is disabled | random shared token | Server-side bearer token |
+| `OPENAI_SITES` | `false` | `false` on Vercel | Enable the OpenAI Sites development capability only when requested |
 
-Vite exposes every `VITE_*` variable to client-side JavaScript. Never place credentials, private tokens, database passwords, or other secrets in these variables.
+The browser always requests same-origin `/api`. In local development, Vite forwards those requests.
+On Vercel, explicit serverless functions forward an allowlisted set of read-only endpoints and add
+the bearer token on the server. Never prefix the token with `VITE_`: Vite exposes every `VITE_*`
+variable to client-side JavaScript.
 
 The committed [`.env.example`](./.env.example) contains documentation only. Local `.env*` files are excluded from Git, except for `.env.example`.
 
@@ -96,8 +101,8 @@ For reproducible CI installations, use `npm ci` with the committed lockfile.
 
 The frontend keeps endpoint contracts intentionally separate:
 
-- `/matches` accepts only `min_score`, `limit`, and `offset`. It is the only feed that exposes `source_url`.
-- `/jobs` accepts `q`, `work_mode`, `employment_type`, `min_salary`, `limit`, and `offset`. It does not render an external vacancy link.
+- `/matches` accepts only `min_score`, `limit`, and `offset` and exposes `source_url`.
+- `/jobs` accepts `q`, `work_mode`, `employment_type`, `min_salary`, `limit`, and `offset` and exposes `source_url`.
 - `/sources` displays factual source fields returned by the API.
 - `/ready` powers the API readiness indicator.
 
@@ -132,17 +137,26 @@ Run `npm audit` regularly and review every dependency update before merging it.
 1. Import the repository into Vercel.
 2. Set the build command to `npm run build`.
 3. Set the output directory to `dist`.
-4. Add the following environment variable for Preview and Production environments:
+4. Add these server-side environment variables for Preview and Production environments:
 
    ```text
-   VITE_API_BASE_URL=https://api.yourdomain.com
+   JOBRADAR_API_ORIGIN=https://api.yourdomain.com
+   JOBRADAR_API_TOKEN=the_same_random_token_configured_on_the_backend
    ```
 
-5. Replace the neutral API placeholder in the `connect-src` directive inside [`vercel.json`](./vercel.json) with the same trusted API origin.
-6. Ensure the API CORS allowlist includes the deployed frontend origins.
-7. Deploy and verify direct navigation to `/matches`, `/jobs`, `/tracker`, and `/sources`.
+5. Keep the token out of all `VITE_*` variables and confirm it is scoped to Preview and Production
+   as intended.
+6. If the application is private, enable [Vercel Deployment Protection](https://vercel.com/docs/deployment-protection)
+   for every URL, including the production domain. The server-side proxy prevents token disclosure
+   but does not authenticate individual visitors by itself.
+7. Deploy and verify `/api/health`, `/api/ready`, `/api/jobs`, `/api/matches`, plus direct
+   navigation to `/matches`, `/jobs`, `/tracker`, and `/sources`.
+8. Protect the production domain, require the CI workflow on `main`, and review the generated
+   deployment before promoting it.
 
-The SPA rewrite in `vercel.json` serves `index.html` for application routes. Its security headers include CSP, clickjacking protection, MIME sniffing protection, Referrer Policy, Permissions Policy, and Cross-Origin Opener Policy.
+The explicit `/api/*.ts` functions take precedence over the SPA rewrite. The proxy accepts GET
+only, uses an upstream timeout, rejects redirects, HTML, and oversized responses, and returns no
+backend credential to the browser. The SPA rewrite serves `index.html` for application routes.
 
 ## Project Structure
 
@@ -166,4 +180,3 @@ src/
 - Review `git status` before every commit.
 - Run a secret scanner in CI in addition to dependency auditing.
 - Add an appropriate `LICENSE` file before accepting external contributions or redistribution.
-

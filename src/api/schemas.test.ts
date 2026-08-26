@@ -72,6 +72,7 @@ describe('external URL validation', () => {
       published_at: null,
       first_seen_at: '2026-08-25T10:00:00Z',
       last_seen_at: '2026-08-25T10:00:00Z',
+      source_url: 'https://example.com/job/1',
     });
 
     expect(job.company).toBeNull();

@@ -4,6 +4,7 @@ import { fastApiValidationErrorSchema } from './schemas';
 import type { FastApiValidationError } from './types';
 
 type QueryValue = string | number | boolean | null | undefined;
+const apiRequestTimeoutMilliseconds = 15_000;
 
 export type ApiErrorKind = 'http' | 'network' | 'invalid-response';
 
@@ -43,7 +44,7 @@ interface ApiRequestOptions<T, TQuery extends object> {
   signal?: AbortSignal;
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() || '/api';
+const apiBaseUrl = '/api';
 
 function buildRequestUrl(
   path: string,
@@ -92,6 +93,10 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError';
 }
 
+function isTimeoutError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'TimeoutError';
+}
+
 export async function apiRequest<T, TQuery extends object = Record<string, never>>(
   path: string,
   options: ApiRequestOptions<T, TQuery>,
@@ -100,14 +105,26 @@ export async function apiRequest<T, TQuery extends object = Record<string, never
   let response: Response;
 
   try {
+    const timeoutSignal = AbortSignal.timeout(apiRequestTimeoutMilliseconds);
+    const requestSignal = options.signal
+      ? AbortSignal.any([options.signal, timeoutSignal])
+      : timeoutSignal;
+
     response = await fetch(url, {
       method: 'GET',
       headers: { Accept: 'application/json' },
-      signal: options.signal,
+      signal: requestSignal,
     });
   } catch (error) {
-    if (isAbortError(error)) {
+    if (isAbortError(error) && options.signal?.aborted) {
       throw error;
+    }
+
+    if (isTimeoutError(error) || isAbortError(error)) {
+      throw new ApiError('API request timed out.', {
+        kind: 'network',
+        cause: error,
+      });
     }
 
     throw new ApiError('Unable to reach the API.', {
@@ -160,6 +177,9 @@ export function getApiErrorMessage(
   }
 
   if (error.kind === 'network') {
+    if (error.message === 'API request timed out.') {
+      return 'The API request timed out. Try again in a moment.';
+    }
     return 'The API could not be reached. Check your connection, API availability, and CORS configuration.';
   }
 
