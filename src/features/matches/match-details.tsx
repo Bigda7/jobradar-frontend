@@ -70,13 +70,14 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500">
               <Building2 className="h-3.5 w-3.5" />
-              <span className="truncate">
-                {match.company ?? 'Company not specified'}
-              </span>
+              <span className="truncate">{match.source_display_name}</span>
             </div>
             <h2 id={titleId} className="mt-3 break-words text-2xl font-semibold leading-8 tracking-[-0.035em] text-white">
               {match.title}
             </h2>
+            {match.company ? (
+              <p className="mt-2 text-sm text-zinc-500">{match.company}</p>
+            ) : null}
           </div>
           <span className="shrink-0 rounded-xl bg-radar px-3 py-2 text-sm font-bold text-[#15170f]">
             {match.score}%

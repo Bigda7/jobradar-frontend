@@ -31,9 +31,12 @@ function createMatch(
     first_seen_at: '2026-08-25T10:00:00Z',
     last_seen_at: '2026-08-25T10:00:00Z',
     source_url: 'https://example.com/job',
+    source_name: 'example',
+    source_display_name: 'Example Jobs',
     score,
     reasons: [],
     concerns: [],
+    matched_skills: [],
     rules_version: 'test',
     ...overrides,
   };
@@ -56,6 +59,18 @@ describe('match view helpers', () => {
     expect(sortLoadedMatches(items, 'company').map((item) => item.id)).toEqual([
       2, 3, 1,
     ]);
+  });
+
+  it('uses publication date to order equal scores', () => {
+    const equalScores = [
+      createMatch(1, 80, { published_at: '2026-08-20T10:00:00Z' }),
+      createMatch(2, 80, { published_at: '2026-08-25T10:00:00Z' }),
+      createMatch(3, 90, { published_at: '2026-08-10T10:00:00Z' }),
+    ];
+
+    expect(
+      sortLoadedMatches(equalScores, 'score').map((item) => item.id),
+    ).toEqual([3, 2, 1]);
   });
 
   it('calculates metrics from the loaded sample', () => {

@@ -44,13 +44,25 @@ describe('external URL validation', () => {
       first_seen_at: '2026-08-25T10:00:00Z',
       last_seen_at: '2026-08-25T10:00:00Z',
       source_url: 'javascript:alert(1)',
+      source_name: 'mock',
+      source_display_name: 'Mock',
       score: 90,
       reasons: [],
       concerns: [],
+      matched_skills: ['React'],
       rules_version: 'test',
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it('accepts structured matched skills and defaults older responses', () => {
+    expect(
+      matchResponseSchema.shape.matched_skills.parse(['React', 'Django']),
+    ).toEqual(['React', 'Django']);
+    expect(matchResponseSchema.shape.matched_skills.parse(undefined)).toEqual(
+      [],
+    );
   });
 
   it('accepts documented nullable job fields and an empty page', () => {
@@ -73,6 +85,8 @@ describe('external URL validation', () => {
       first_seen_at: '2026-08-25T10:00:00Z',
       last_seen_at: '2026-08-25T10:00:00Z',
       source_url: 'https://example.com/job/1',
+      source_name: 'example',
+      source_display_name: 'Example Jobs',
     });
 
     expect(job.company).toBeNull();

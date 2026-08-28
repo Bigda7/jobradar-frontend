@@ -48,6 +48,8 @@ function createJob(overrides: Partial<JobResponse> = {}): JobResponse {
     first_seen_at: '2026-08-25T10:00:00Z',
     last_seen_at: '2026-08-25T10:00:00Z',
     source_url: 'https://example.com/job/42',
+    source_name: 'example',
+    source_display_name: 'Example Jobs',
     ...overrides,
   };
 }
@@ -58,6 +60,7 @@ function createMatch(overrides: Partial<MatchResponse> = {}): MatchResponse {
     score: 88,
     reasons: [],
     concerns: [],
+    matched_skills: [],
     rules_version: 'test',
     ...overrides,
   };
