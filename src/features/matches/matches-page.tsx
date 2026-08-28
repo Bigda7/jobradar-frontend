@@ -34,50 +34,6 @@ import {
 
 type ViewMode = 'board' | 'list';
 
-interface ScoreTier {
-  key: 'top' | 'strong' | 'good' | 'below';
-  label: string;
-  range: string;
-  min: number;
-  max: number;
-  markerClassName: string;
-}
-
-const scoreTiers: ScoreTier[] = [
-  {
-    key: 'top',
-    label: 'Top matches',
-    range: '85–100',
-    min: 85,
-    max: 100,
-    markerClassName: 'bg-radar',
-  },
-  {
-    key: 'strong',
-    label: 'Strong matches',
-    range: '70–84',
-    min: 70,
-    max: 84,
-    markerClassName: 'bg-cyan-300',
-  },
-  {
-    key: 'good',
-    label: 'Good fit',
-    range: '55–69',
-    min: 55,
-    max: 69,
-    markerClassName: 'bg-violet-300',
-  },
-  {
-    key: 'below',
-    label: 'Below target',
-    range: '0–54',
-    min: 0,
-    max: 54,
-    markerClassName: 'bg-zinc-500',
-  },
-];
-
 const minimumScoreOptions = [
   { value: '0', label: 'All scores' },
   { value: '55', label: '55 and above' },
@@ -135,13 +91,6 @@ export function MatchesPage() {
     () => sortLoadedMatches(filterMatchesByTier(items, tierFocus), sort),
     [items, sort, tierFocus],
   );
-  const visibleTiers = useMemo(() => {
-    if (tierFocus !== 'all') {
-      return scoreTiers.filter((tier) => tier.key === tierFocus);
-    }
-
-    return scoreTiers.filter((tier) => tier.max >= minimumScore);
-  }, [minimumScore, tierFocus]);
   const metrics = useMemo(() => getLoadedMatchMetrics(items), [items]);
   const trackedCount = getActiveTrackerCount(trackerState);
   const rulesVersion = items[0]?.rules_version;
@@ -187,6 +136,16 @@ export function MatchesPage() {
   };
 
   const closeMatch = clearSelection;
+
+  const openPreviousPage = () => {
+    setOffset(Math.max(0, offset - pageSize));
+    clearSelection();
+  };
+
+  const openNextPage = () => {
+    setOffset(offset + pageSize);
+    clearSelection();
+  };
 
   return (
     <AppShell matchCount={total}>
@@ -306,13 +265,40 @@ export function MatchesPage() {
               </div>
             </div>
 
-            <div className="flex h-9 items-center justify-between border-t border-white/[0.04] px-4 text-[10px] sm:px-6 lg:px-7">
-              <span className="text-zinc-700">
-                Sort and tier focus apply to the loaded page only.
-              </span>
-              <span className="max-w-[48vw] truncate text-zinc-700">
-                {rulesVersion ? `Rules: ${rulesVersion}` : 'Rules unavailable'}
-              </span>
+            <div className="flex min-h-9 flex-wrap items-center justify-between gap-2 border-t border-white/[0.04] px-4 py-1.5 text-[10px] sm:px-6 lg:px-7">
+              <div className="flex flex-wrap items-center gap-3 text-zinc-700">
+                <span>Sort and tier focus apply to the loaded page only.</span>
+                {total !== undefined && total > 0 ? (
+                  <span className="font-medium text-zinc-500">
+                    Showing {offset + 1}–{Math.min(offset + pageSize, total)} of {total}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex items-center gap-2">
+                {total !== undefined && total > pageSize ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={!hasPreviousPage}
+                      onClick={openPreviousPage}
+                      className="rounded-md border border-white/[0.07] px-2 py-1 text-zinc-400 disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!hasNextPage || matchesQuery.isPlaceholderData}
+                      onClick={openNextPage}
+                      className="rounded-md border border-white/[0.07] px-2 py-1 text-zinc-400 disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      Next
+                    </button>
+                  </>
+                ) : null}
+                <span className="max-w-[36vw] truncate text-zinc-700">
+                  {rulesVersion ? `Rules: ${rulesVersion}` : 'Rules unavailable'}
+                </span>
+              </div>
             </div>
           </header>
 
@@ -342,19 +328,12 @@ export function MatchesPage() {
                 </div>
               </div>
             ) : matchesQuery.isPending ? (
-              <div className="grid grid-flow-col auto-cols-[minmax(280px,1fr)] gap-3 p-4 sm:p-5 lg:p-6">
-                {visibleTiers.map((tier) => (
-                  <div key={tier.key} className="min-w-0">
-                    <div className="mb-3 h-5 w-36 animate-pulse rounded bg-white/[0.05]" />
-                    <div className="space-y-2.5">
-                      {[0, 1, 2].map((item) => (
-                        <div
-                          key={item}
-                          className="h-48 animate-pulse rounded-xl border border-white/[0.05] bg-white/[0.025]"
-                        />
-                      ))}
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 gap-3 p-4 sm:p-5 md:grid-cols-2 lg:p-6 2xl:grid-cols-3">
+                {[0, 1, 2, 3, 4, 5].map((item) => (
+                  <div
+                    key={item}
+                    className="h-48 animate-pulse rounded-xl border border-white/[0.05] bg-white/[0.025]"
+                  />
                 ))}
               </div>
             ) : items.length === 0 ? (
@@ -394,50 +373,15 @@ export function MatchesPage() {
                 </div>
               </div>
             ) : viewMode === 'board' ? (
-              <div className="grid gap-3 p-4 sm:p-5 lg:min-w-max lg:grid-flow-col lg:auto-cols-[minmax(288px,1fr)] lg:p-6 2xl:min-w-0">
-                {visibleTiers.map((tier) => {
-                  const tierItems = focusedItems.filter(
-                    (match) => match.score >= tier.min && match.score <= tier.max,
-                  );
-
-                  return (
-                    <section key={tier.key} className="min-w-0">
-                      <div className="mb-3 flex h-7 items-center justify-between gap-3 px-1">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span
-                            className={`h-2 w-2 shrink-0 rounded-full ${tier.markerClassName}`}
-                          />
-                          <h2 className="truncate text-xs font-semibold text-zinc-300">
-                            {tier.label}
-                          </h2>
-                          <span className="text-[10px] text-zinc-700">
-                            {tier.range}
-                          </span>
-                        </div>
-                        <span className="rounded-full bg-white/[0.04] px-2 py-0.5 text-[10px] text-zinc-500">
-                          {tierItems.length} loaded
-                        </span>
-                      </div>
-
-                      <div className="space-y-2.5">
-                        {tierItems.length > 0 ? (
-                          tierItems.map((match) => (
-                            <MatchCard
-                              key={match.id}
-                              match={match}
-                              isSelected={selectedMatch?.id === match.id}
-                              onSelect={openMatch}
-                            />
-                          ))
-                        ) : (
-                          <div className="rounded-xl border border-dashed border-white/[0.07] px-4 py-10 text-center text-xs text-zinc-700">
-                            No loaded matches in this tier
-                          </div>
-                        )}
-                      </div>
-                    </section>
-                  );
-                })}
+              <div className="grid grid-cols-1 gap-3 p-4 sm:p-5 md:grid-cols-2 lg:p-6 2xl:grid-cols-3">
+                {focusedItems.map((match) => (
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    isSelected={selectedMatch?.id === match.id}
+                    onSelect={openMatch}
+                  />
+                ))}
               </div>
             ) : (
               <div className="mx-auto max-w-5xl space-y-2 p-4 sm:p-5 lg:p-6">
@@ -463,10 +407,7 @@ export function MatchesPage() {
                 <button
                   type="button"
                   disabled={!hasPreviousPage}
-                  onClick={() => {
-                    setOffset(Math.max(0, offset - pageSize));
-                    clearSelection();
-                  }}
+                  onClick={openPreviousPage}
                   className="rounded-lg border border-white/[0.07] px-3 py-1.5 text-zinc-400 disabled:cursor-not-allowed disabled:opacity-30"
                 >
                   Previous
@@ -474,10 +415,7 @@ export function MatchesPage() {
                 <button
                   type="button"
                   disabled={!hasNextPage || matchesQuery.isPlaceholderData}
-                  onClick={() => {
-                    setOffset(offset + pageSize);
-                    clearSelection();
-                  }}
+                  onClick={openNextPage}
                   className="rounded-lg border border-white/[0.07] px-3 py-1.5 text-zinc-400 disabled:cursor-not-allowed disabled:opacity-30"
                 >
                   Next

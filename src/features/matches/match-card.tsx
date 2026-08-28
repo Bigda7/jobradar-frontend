@@ -18,7 +18,7 @@ export function MatchCard({
   compact = false,
 }: MatchCardProps) {
   const salary = formatSalary(match);
-  const preview = match.reasons[0] ?? match.concerns[0] ?? null;
+  const matchedSkills = match.matched_skills.slice(0, 4);
   const tags = [
     formatLabel(match.work_mode),
     match.employment_type ? formatLabel(match.employment_type) : null,
@@ -27,7 +27,19 @@ export function MatchCard({
 
   return (
     <article
-      className={`group w-full text-left transition-all ${
+      onClick={() => onSelect(match)}
+      onKeyDown={(event) => {
+        if (
+          event.target === event.currentTarget &&
+          (event.key === 'Enter' || event.key === ' ')
+        ) {
+          event.preventDefault();
+          onSelect(match);
+        }
+      }}
+      tabIndex={0}
+      aria-label={`Open details for ${match.title}`}
+      className={`group w-full cursor-pointer text-left transition-all ${
         compact
           ? 'grid gap-4 rounded-xl border px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center'
           : 'rounded-xl border p-4'
@@ -40,7 +52,7 @@ export function MatchCard({
       <div className="min-w-0">
         <div className="flex items-start justify-between gap-3">
           <span className="truncate text-[11px] font-medium uppercase tracking-[0.08em] text-zinc-500">
-            {match.company ?? 'Company not specified'}
+            {match.source_display_name}
           </span>
           <div className="flex shrink-0 items-center gap-2">
             {!compact ? (
@@ -52,15 +64,13 @@ export function MatchCard({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onSelect(match)}
-          className="mt-2 block w-full text-left outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-radar/40"
-        >
-          <h3 className="line-clamp-2 break-words text-[15px] font-semibold leading-5 text-zinc-100">
-            {match.title}
-          </h3>
-        </button>
+        <h3 className="mt-2 line-clamp-2 break-words text-[15px] font-semibold leading-5 text-zinc-100">
+          {match.title}
+        </h3>
+
+        {match.company ? (
+          <p className="mt-1 truncate text-xs text-zinc-500">{match.company}</p>
+        ) : null}
 
         <div className="mt-3 flex flex-wrap gap-1.5">
           {tags.slice(0, 3).map((tag, index) => (
@@ -79,9 +89,10 @@ export function MatchCard({
           ))}
         </div>
 
-        {preview && !compact ? (
-          <p className="mt-3 line-clamp-2 break-words text-xs leading-5 text-zinc-500">
-            {preview}
+        {matchedSkills.length > 0 && !compact ? (
+          <p className="mt-3 truncate text-xs leading-5 text-zinc-500">
+            <span className="font-medium text-zinc-400">Why it matches:</span>{' '}
+            {matchedSkills.join(' · ')}
           </p>
         ) : null}
 
@@ -93,14 +104,9 @@ export function MatchCard({
             </span>
           </span>
           {!compact ? (
-            <button
-              type="button"
-              onClick={() => onSelect(match)}
-              aria-label={`Open details for ${match.title}`}
-              className="grid h-7 w-7 place-items-center rounded-lg hover:bg-white/[0.05]"
-            >
+            <span className="grid h-7 w-7 place-items-center rounded-lg group-hover:bg-white/[0.05]">
               <ChevronRight className="h-4 w-4 text-zinc-700 transition-transform group-hover:translate-x-0.5 group-hover:text-zinc-400" />
-            </button>
+            </span>
           ) : null}
         </div>
       </div>
@@ -110,14 +116,9 @@ export function MatchCard({
           <span className="rounded-full bg-radar px-2.5 py-1 text-xs font-bold text-[#15170f]">
             {match.score}%
           </span>
-          <button
-            type="button"
-            onClick={() => onSelect(match)}
-            aria-label={`Open details for ${match.title}`}
-            className="grid h-8 w-8 place-items-center rounded-lg border border-white/[0.07]"
-          >
+          <span className="grid h-8 w-8 place-items-center rounded-lg border border-white/[0.07]">
             <ChevronRight className="h-4 w-4 text-zinc-600" />
-          </button>
+          </span>
         </div>
       ) : null}
     </article>

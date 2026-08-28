@@ -3,6 +3,22 @@ import type { MatchResponse } from '../../api';
 export type MatchTierFocus = 'all' | 'top' | 'strong' | 'good';
 export type MatchSort = 'score' | 'newest' | 'company';
 
+function publishedTimestamp(item: MatchResponse): number {
+  if (!item.published_at) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const timestamp = Date.parse(item.published_at);
+  return Number.isNaN(timestamp) ? Number.NEGATIVE_INFINITY : timestamp;
+}
+
+function comparePublishedNewest(
+  left: MatchResponse,
+  right: MatchResponse,
+): number {
+  return publishedTimestamp(right) - publishedTimestamp(left);
+}
+
 export function filterMatchesByTier(
   items: MatchResponse[],
   focus: MatchTierFocus,
@@ -29,17 +45,11 @@ export function sortLoadedMatches(
 ): MatchResponse[] {
   return [...items].sort((left, right) => {
     if (sort === 'score') {
-      return right.score - left.score;
+      return right.score - left.score || comparePublishedNewest(left, right);
     }
 
     if (sort === 'newest') {
-      const leftDate = left.published_at
-        ? Date.parse(left.published_at)
-        : Number.NEGATIVE_INFINITY;
-      const rightDate = right.published_at
-        ? Date.parse(right.published_at)
-        : Number.NEGATIVE_INFINITY;
-      return rightDate - leftDate;
+      return comparePublishedNewest(left, right);
     }
 
     return (left.company ?? '\uffff').localeCompare(right.company ?? '\uffff');

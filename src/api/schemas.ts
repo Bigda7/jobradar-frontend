@@ -55,12 +55,15 @@ export const jobResponseSchema = z.object({
   first_seen_at: dateTimeSchema,
   last_seen_at: dateTimeSchema,
   source_url: safeExternalUrlSchema,
+  source_name: shortExternalTextSchema,
+  source_display_name: shortExternalTextSchema,
 });
 
 export const matchResponseSchema = jobResponseSchema.extend({
   score: z.number().int().min(0).max(100),
   reasons: z.array(shortExternalTextSchema).max(100),
   concerns: z.array(shortExternalTextSchema).max(100),
+  matched_skills: z.array(shortExternalTextSchema).max(100).default([]),
   rules_version: shortExternalTextSchema,
 });
 

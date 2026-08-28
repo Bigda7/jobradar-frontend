@@ -41,6 +41,7 @@ export function formatSalary(
 export function formatRelativeDate(
   value: string | null,
   fallback = 'Date unavailable',
+  now = Date.now(),
 ): string {
   if (!value) {
     return fallback;
@@ -52,7 +53,7 @@ export function formatRelativeDate(
     return fallback;
   }
 
-  const seconds = Math.round((timestamp - Date.now()) / 1_000);
+  const seconds = Math.min(0, Math.round((timestamp - now) / 1_000));
   const units: [Intl.RelativeTimeFormatUnit, number][] = [
     ['year', 60 * 60 * 24 * 365],
     ['month', 60 * 60 * 24 * 30],
@@ -75,7 +76,17 @@ export function formatRelativeDate(
 
 export function formatLabel(value: string): string {
   return value
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
+    .trim()
+    .split(/\s*[,;/|]\s*/)
+    .filter(Boolean)
+    .map((label) =>
+      label
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(' ')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' '),
+    )
+    .join(', ');
 }

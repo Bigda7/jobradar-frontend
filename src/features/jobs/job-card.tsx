@@ -22,11 +22,14 @@ export function JobCard({ job }: JobCardProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="truncate text-[11px] font-medium uppercase tracking-[0.09em] text-zinc-500">
-            {job.company ?? 'Company not specified'}
+            {job.source_display_name}
           </p>
           <h2 className="mt-2 break-words text-lg font-semibold leading-6 tracking-[-0.025em] text-zinc-100">
             {job.title}
           </h2>
+          {job.company ? (
+            <p className="mt-1 text-sm text-zinc-500">{job.company}</p>
+          ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <span className="w-fit rounded-full border border-white/[0.07] bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium text-zinc-400">
