@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { Activity, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
 
 import { getApiErrorMessage, getSources, queryKeys } from '../../api';
 import { AppShell } from '../../components/app-shell';
+import { serviceStatusUrl } from '../../service-status';
 import { SourceCard } from './source-card';
 
 export function SourcesPage() {
@@ -40,17 +41,30 @@ export function SourcesPage() {
                 ) : null}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => sourcesQuery.refetch()}
-              disabled={sourcesQuery.isFetching}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-xs text-zinc-500 hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-wait"
-            >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${sourcesQuery.isFetching ? 'animate-spin text-radar' : ''}`}
-              />
-              Refresh
-            </button>
+            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+              <button
+                type="button"
+                onClick={() => sourcesQuery.refetch()}
+                disabled={sourcesQuery.isFetching}
+                className="inline-flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-xs text-zinc-500 hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-wait"
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${sourcesQuery.isFetching ? 'animate-spin text-radar' : ''}`}
+                />
+                Refresh
+              </button>
+              <a
+                href={serviceStatusUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open JobRadar service status in a new tab"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-xs text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
+              >
+                <Activity className="h-3.5 w-3.5 text-radar" />
+                <span>Service status</span>
+                <ExternalLink className="h-3 w-3" aria-hidden="true" />
+              </a>
+            </div>
           </div>
           <p className="mt-3 max-w-3xl text-[11px] leading-5 text-zinc-700">
             Enabled state, timestamps, and the last reported error are shown
