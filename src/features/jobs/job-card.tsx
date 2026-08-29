@@ -18,17 +18,19 @@ export function JobCard({ job }: JobCardProps) {
   const sourceUrl = isSafeExternalUrl(job.source_url) ? job.source_url : null;
 
   return (
-    <article className="rounded-2xl border border-white/[0.07] bg-card p-5 transition-colors hover:border-white/[0.12] hover:bg-[#292a2d]">
+    <article className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-card p-5 transition-colors hover:border-white/[0.12] hover:bg-[#292a2d]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="truncate text-[11px] font-medium uppercase tracking-[0.09em] text-zinc-500">
             {job.source_display_name}
           </p>
-          <h2 className="mt-2 break-words text-lg font-semibold leading-6 tracking-[-0.025em] text-zinc-100">
+          <h2 className="mt-2 line-clamp-3 break-words [overflow-wrap:anywhere] text-lg font-semibold leading-6 tracking-[-0.025em] text-zinc-100">
             {job.title}
           </h2>
           {job.company ? (
-            <p className="mt-1 text-sm text-zinc-500">{job.company}</p>
+            <p className="mt-1 break-words [overflow-wrap:anywhere] text-sm text-zinc-500">
+              {job.company}
+            </p>
           ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -56,7 +58,7 @@ export function JobCard({ job }: JobCardProps) {
       </div>
 
       {job.description ? (
-        <p className="mt-4 line-clamp-3 break-words text-sm leading-6 text-zinc-500">
+        <p className="mt-4 line-clamp-3 break-words [overflow-wrap:anywhere] text-sm leading-6 text-zinc-500">
           {job.description}
         </p>
       ) : (

@@ -222,25 +222,27 @@ export function MatchesPage() {
             </div>
 
             <div className="flex flex-col gap-3 border-t border-white/[0.04] px-4 py-3 sm:px-6 xl:flex-row xl:items-center xl:justify-between lg:px-7">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="mr-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-700">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-700 sm:mr-1">
                   Loaded results
                 </span>
-                {tierChips.map((chip) => (
-                  <button
-                    key={chip.value}
-                    type="button"
-                    onClick={() => selectTier(chip.value)}
-                    aria-pressed={tierFocus === chip.value}
-                    className={`rounded-full px-3 py-1.5 text-[10px] font-medium transition-colors ${
-                      tierFocus === chip.value
-                        ? 'bg-radar text-[#15170f]'
-                        : 'border border-white/[0.07] bg-white/[0.025] text-zinc-500 hover:text-zinc-200'
-                    }`}
-                  >
-                    {chip.label}
-                  </button>
-                ))}
+                <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
+                  {tierChips.map((chip) => (
+                    <button
+                      key={chip.value}
+                      type="button"
+                      onClick={() => selectTier(chip.value)}
+                      aria-pressed={tierFocus === chip.value}
+                      className={`w-full rounded-full px-3 py-1.5 text-[10px] font-medium transition-colors sm:w-auto ${
+                        tierFocus === chip.value
+                          ? 'bg-radar text-[#15170f]'
+                          : 'border border-white/[0.07] bg-white/[0.025] text-zinc-500 hover:text-zinc-200'
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="grid w-full grid-cols-2 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] sm:w-auto sm:grid-cols-4">

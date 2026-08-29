@@ -198,7 +198,7 @@ export function JobsPage() {
           </div>
         </header>
 
-        <div className="premium-scrollbar min-h-0 flex-1 overflow-y-auto">
+        <div className="premium-scrollbar min-h-0 min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto">
           {jobsQuery.isError ? (
             <div className="grid min-h-[420px] place-items-center p-6">
               <div className="max-w-md rounded-2xl border border-rose-400/15 bg-rose-400/[0.04] p-7 text-center">
@@ -223,7 +223,7 @@ export function JobsPage() {
               </div>
             </div>
           ) : jobsQuery.isPending ? (
-            <div className="mx-auto grid max-w-7xl gap-3 p-4 sm:p-6 xl:grid-cols-2">
+            <div className="mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 gap-3 p-4 sm:p-6 xl:grid-cols-2">
               {[0, 1, 2, 3, 4, 5].map((item) => (
                 <div
                   key={item}
@@ -254,7 +254,7 @@ export function JobsPage() {
               </div>
             </div>
           ) : (
-            <div className="mx-auto grid max-w-7xl gap-3 p-4 sm:p-6 xl:grid-cols-2">
+            <div className="mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 gap-3 p-4 sm:p-6 xl:grid-cols-2">
               {jobs.map((job) => (
                 <JobCard key={job.id} job={job} />
               ))}
