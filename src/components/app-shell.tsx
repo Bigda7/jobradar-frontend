@@ -30,7 +30,7 @@ interface AppShellProps {
 
 const navigation = [
   { to: '/matches', label: 'Matches', icon: Radar },
-  { to: '/jobs', label: 'All jobs', icon: Search },
+  { to: '/jobs', label: 'All jobs', icon: BriefcaseBusiness },
   { to: '/tracker', label: 'Tracker', icon: ClipboardList },
   { to: '/sources', label: 'Sources', icon: RadioTower },
 ];
