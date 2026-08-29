@@ -12,6 +12,7 @@ import { NavLink } from 'react-router-dom';
 
 import { ApiReadyIndicator } from './api-ready-indicator';
 import { CommandPalette } from './command-palette';
+import { serviceStatusUrl } from '../service-status';
 import {
   getCommandPaletteShortcutLabel,
   isMacPlatform,
@@ -34,8 +35,6 @@ const navigation = [
   { to: '/tracker', label: 'Tracker', icon: ClipboardList },
   { to: '/sources', label: 'Sources', icon: RadioTower },
 ];
-
-const serviceStatusUrl = 'https://stats.uptimerobot.com/pbYg91DSyR';
 
 export function AppShell({ children, matchCount }: AppShellProps) {
   const trackerState = useTrackerState();
@@ -162,15 +161,6 @@ export function AppShell({ children, matchCount }: AppShellProps) {
             </span>
           </NavLink>
           <div className="flex items-center gap-1">
-            <a
-              href={serviceStatusUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Open JobRadar service status in a new tab"
-              className="grid h-9 w-9 place-items-center rounded-lg text-zinc-600 transition-colors hover:bg-white/[0.035] hover:text-radar focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
-            >
-              <Activity className="h-[17px] w-[17px]" />
-            </a>
             <button
               type="button"
               onClick={() => setCommandOpen(true)}
