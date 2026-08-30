@@ -1,9 +1,11 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { CalendarDays, GripVertical, StickyNote } from 'lucide-react';
+import type { CSSProperties, ReactNode, Ref } from 'react';
 
 import { formatLabel, formatRelativeDate } from '../matches/formatters';
 import type { TrackerRecord } from './tracker-schema';
+import { trackerStatusMeta } from './tracker-config';
 import { formatTrackerSalary } from './tracker-formatters';
 import { TrackerRecordStatusSelect } from './tracker-record-status-select';
 import { getTrackerSortableId } from './tracker-dnd';
@@ -14,61 +16,66 @@ interface TrackerCardProps {
   sortable?: boolean;
 }
 
-export function TrackerCard({
+interface TrackerCardContentProps {
+  record: TrackerRecord;
+  onSelect?: (record: TrackerRecord) => void;
+  dragHandle?: ReactNode;
+  nodeRef?: Ref<HTMLElement>;
+  style?: CSSProperties;
+  dragging?: boolean;
+  overlay?: boolean;
+}
+
+function TrackerCardContent({
   record,
   onSelect,
-  sortable = true,
-}: TrackerCardProps) {
-  const sortableState = useSortable({
-    id: getTrackerSortableId(record.opportunityId),
-    disabled: !sortable,
-    data: {
-      type: 'tracker-record',
-      opportunityId: record.opportunityId,
-      status: record.status,
-    },
-  });
+  dragHandle,
+  nodeRef,
+  style,
+  dragging = false,
+  overlay = false,
+}: TrackerCardContentProps) {
   const salary = formatTrackerSalary(record.snapshot);
-  const style = {
-    transform: CSS.Transform.toString(sortableState.transform),
-    transition: sortableState.transition,
-  };
+  const heading = (
+    <>
+      <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.09em] text-zinc-600">
+        {record.snapshot.company ?? 'Company not specified'}
+      </span>
+      <h3 className="mt-2 line-clamp-2 break-words text-sm font-semibold leading-5 text-zinc-100">
+        {record.snapshot.title}
+      </h3>
+    </>
+  );
 
   return (
     <article
-      ref={sortableState.setNodeRef}
+      ref={nodeRef}
       style={style}
-      className={`rounded-xl border bg-card p-4 shadow-sm shadow-black/10 transition-colors ${
-        sortableState.isDragging
-          ? 'z-20 border-radar/45 opacity-65'
-          : 'border-white/[0.07] hover:border-white/[0.12]'
+      className={`rounded-xl border bg-card p-4 transition-colors ${
+        overlay
+          ? 'border-radar/45 shadow-2xl shadow-black/45'
+          : 'shadow-sm shadow-black/10'
+      } ${
+        dragging
+          ? 'border-radar/25 opacity-20'
+          : overlay
+            ? ''
+            : 'border-white/[0.07] hover:border-white/[0.12]'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => onSelect(record)}
-          className="min-w-0 flex-1 text-left outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-radar/40"
-        >
-          <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.09em] text-zinc-600">
-            {record.snapshot.company ?? 'Company not specified'}
-          </span>
-          <h3 className="mt-2 line-clamp-2 break-words text-sm font-semibold leading-5 text-zinc-100">
-            {record.snapshot.title}
-          </h3>
-        </button>
-        {sortable ? (
+        {onSelect ? (
           <button
             type="button"
-            ref={sortableState.setActivatorNodeRef}
-            {...sortableState.attributes}
-            {...sortableState.listeners}
-            className="grid h-8 w-8 shrink-0 cursor-grab place-items-center rounded-lg border border-white/[0.06] text-zinc-700 hover:bg-white/[0.04] hover:text-zinc-400 active:cursor-grabbing"
-            aria-label={`Drag ${record.snapshot.title}`}
+            onClick={() => onSelect(record)}
+            className="min-w-0 flex-1 text-left outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-radar/40"
           >
-            <GripVertical className="h-4 w-4" />
+            {heading}
           </button>
-        ) : null}
+        ) : (
+          <div className="min-w-0 flex-1 text-left">{heading}</div>
+        )}
+        {dragHandle}
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
@@ -83,7 +90,13 @@ export function TrackerCard({
       </div>
 
       <div className="mt-4">
-        <TrackerRecordStatusSelect record={record} compact />
+        {overlay ? (
+          <span className="inline-flex rounded-lg border border-white/[0.07] bg-white/[0.025] px-2.5 py-1.5 text-[10px] text-zinc-400">
+            {trackerStatusMeta[record.status].label}
+          </span>
+        ) : (
+          <TrackerRecordStatusSelect record={record} compact />
+        )}
       </div>
 
       <footer className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3 text-[10px] text-zinc-700">
@@ -104,5 +117,69 @@ export function TrackerCard({
         ) : null}
       </footer>
     </article>
+  );
+}
+
+export function TrackerCard({
+  record,
+  onSelect,
+  sortable = true,
+}: TrackerCardProps) {
+  const sortableState = useSortable({
+    id: getTrackerSortableId(record.opportunityId),
+    disabled: !sortable,
+    data: {
+      type: 'tracker-record',
+      opportunityId: record.opportunityId,
+      status: record.status,
+    },
+  });
+  const style = {
+    transform: sortableState.isDragging
+      ? undefined
+      : CSS.Transform.toString(sortableState.transform),
+    transition: sortableState.isDragging
+      ? undefined
+      : sortableState.transition,
+  };
+
+  return (
+    <TrackerCardContent
+      record={record}
+      onSelect={onSelect}
+      nodeRef={sortableState.setNodeRef}
+      style={style}
+      dragging={sortableState.isDragging}
+      dragHandle={
+        sortable ? (
+          <button
+            type="button"
+            ref={sortableState.setActivatorNodeRef}
+            {...sortableState.attributes}
+            {...sortableState.listeners}
+            className="grid h-8 w-8 shrink-0 touch-none cursor-grab place-items-center rounded-lg border border-white/[0.06] text-zinc-700 hover:bg-white/[0.04] hover:text-zinc-400 active:cursor-grabbing"
+            aria-label={`Drag ${record.snapshot.title}`}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        ) : undefined
+      }
+    />
+  );
+}
+
+export function TrackerDragOverlayCard({ record }: { record: TrackerRecord }) {
+  return (
+    <div aria-hidden="true">
+      <TrackerCardContent
+        record={record}
+        overlay
+        dragHandle={
+          <span className="grid h-8 w-8 shrink-0 cursor-grabbing place-items-center rounded-lg border border-radar/20 text-radar/70">
+            <GripVertical className="h-4 w-4" />
+          </span>
+        }
+      />
+    </div>
   );
 }
