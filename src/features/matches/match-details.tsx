@@ -162,9 +162,6 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
           </p>
         </section>
 
-        <div className="mt-7 border-t border-white/[0.07] pt-5 text-[11px] text-zinc-700">
-          Rules: {match.rules_version}
-        </div>
       </div>
 
         {sourceUrl ? (

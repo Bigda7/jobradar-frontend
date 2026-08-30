@@ -8,6 +8,7 @@ import {
   RadioTower,
   Radar,
   Search,
+  X,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -112,9 +113,15 @@ export function CommandPalette({
                 placeholder="Navigate or search remote jobs"
                 className="h-full min-w-0 flex-1 bg-transparent text-sm text-zinc-100 outline-none placeholder:text-zinc-700"
               />
-              <kbd className="rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-1 text-[10px] text-zinc-600">
+              <kbd className="hidden rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-1 text-[10px] text-zinc-600 sm:inline">
                 Esc
               </kbd>
+              <Dialog.Close
+                aria-label="Close search"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-zinc-500 transition-colors hover:bg-white/[0.07] hover:text-white sm:hidden"
+              >
+                <X className="h-4 w-4" />
+              </Dialog.Close>
             </div>
 
             <Command.List className="premium-scrollbar max-h-[min(64vh,560px)] overflow-y-auto p-2">
@@ -230,7 +237,7 @@ export function CommandPalette({
               ) : null}
             </Command.List>
 
-            <div className="flex items-center justify-between border-t border-white/[0.07] px-4 py-2.5 text-[10px] text-zinc-700">
+            <div className="hidden items-center justify-between border-t border-white/[0.07] px-4 py-2.5 text-[10px] text-zinc-700 sm:flex">
               <span>Arrow keys to navigate · Enter to open</span>
               <span>Remote API search uses /jobs</span>
             </div>

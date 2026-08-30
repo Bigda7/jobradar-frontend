@@ -41,12 +41,12 @@ export function SourcesPage() {
                 ) : null}
               </div>
             </div>
-            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center sm:justify-end">
               <button
                 type="button"
                 onClick={() => sourcesQuery.refetch()}
                 disabled={sourcesQuery.isFetching}
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 text-xs text-zinc-500 hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-wait"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 text-xs text-zinc-500 hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-wait sm:w-auto"
               >
                 <RefreshCw
                   className={`h-4 w-4 ${sourcesQuery.isFetching ? 'animate-spin text-radar' : ''}`}
@@ -58,11 +58,14 @@ export function SourcesPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Open JobRadar service status in a new tab"
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 text-xs text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70 lg:hidden"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 text-xs text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70 sm:w-auto lg:hidden"
               >
                 <Activity className="h-4 w-4 text-radar" />
                 <span>Live status</span>
-                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                <ExternalLink
+                  className="hidden h-3.5 w-3.5 sm:block"
+                  aria-hidden="true"
+                />
               </a>
             </div>
           </div>

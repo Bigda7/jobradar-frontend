@@ -16,6 +16,7 @@ interface JobCardProps {
 export function JobCard({ job }: JobCardProps) {
   const salary = formatSalary(job);
   const sourceUrl = isSafeExternalUrl(job.source_url) ? job.source_url : null;
+  const kindLabel = job.kind === 'employment' ? 'Job' : formatLabel(job.kind);
 
   return (
     <article className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-card p-5 transition-colors hover:border-white/[0.12] hover:bg-[#292a2d]">
@@ -35,7 +36,7 @@ export function JobCard({ job }: JobCardProps) {
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <span className="w-fit rounded-full border border-white/[0.07] bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium text-zinc-400">
-            {formatLabel(job.kind)}
+            {kindLabel}
           </span>
           <TrackerStatusControl opportunity={job} compact />
         </div>
