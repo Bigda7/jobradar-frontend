@@ -1,9 +1,10 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
   ArrowDownUp,
   Columns3,
   LayoutList,
+  RadioTower,
   RefreshCw,
   SlidersHorizontal,
 } from 'lucide-react';
@@ -13,7 +14,9 @@ import { useSearchParams } from 'react-router-dom';
 import {
   getApiErrorMessage,
   getMatches,
+  getSources,
   queryKeys,
+  type MatchFilters,
   type MatchResponse,
 } from '../../api';
 import { AppShell } from '../../components/app-shell';
@@ -56,6 +59,7 @@ const tierChips: { value: MatchTierFocus; label: string }[] = [
 
 const pageSize = 50;
 const emptyMatches: MatchResponse[] = [];
+const allSourcesValue = 'all';
 
 export function MatchesPage() {
   const [minimumScore, setMinimumScore] = useState(55);
@@ -66,12 +70,34 @@ export function MatchesPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const trackerState = useTrackerState();
-  const filters = { min_score: minimumScore, limit: pageSize, offset };
+  const selectedSource = searchParams.get('source') ?? allSourcesValue;
+  const filters: MatchFilters = {
+    min_score: minimumScore,
+    limit: pageSize,
+    offset,
+    ...(selectedSource !== allSourcesValue
+      ? { source: selectedSource }
+      : {}),
+  };
+
+  const sourcesQuery = useQuery({
+    queryKey: queryKeys.sources(),
+    queryFn: ({ signal }) => getSources(signal),
+  });
 
   const matchesQuery = useQuery({
     queryKey: queryKeys.matches(filters),
     queryFn: ({ signal }) => getMatches(filters, signal),
-    placeholderData: keepPreviousData,
+    placeholderData: (previousData, previousQuery) => {
+      const previousFilters = previousQuery?.queryKey[1] as
+        | MatchFilters
+        | undefined;
+
+      return previousFilters?.source === filters.source &&
+        previousFilters?.min_score === filters.min_score
+        ? previousData
+        : undefined;
+    },
   });
 
   const items = matchesQuery.data?.items ?? emptyMatches;
@@ -94,6 +120,26 @@ export function MatchesPage() {
   const metrics = useMemo(() => getLoadedMatchMetrics(items), [items]);
   const trackedCount = getActiveTrackerCount(trackerState);
   const rulesVersion = items[0]?.rules_version;
+  const sourceOptions = useMemo(() => {
+    const options = [
+      { value: allSourcesValue, label: 'All platforms' },
+      ...(sourcesQuery.data ?? [])
+        .filter((source) => source.enabled)
+        .sort((left, right) =>
+          left.display_name.localeCompare(right.display_name),
+        )
+        .map((source) => ({
+          value: source.name,
+          label: source.display_name,
+        })),
+    ];
+
+    if (!options.some((option) => option.value === selectedSource)) {
+      options.push({ value: selectedSource, label: selectedSource });
+    }
+
+    return options;
+  }, [selectedSource, sourcesQuery.data]);
   const hasPreviousPage = offset > 0;
   const hasNextPage = total !== undefined && offset + pageSize < total;
   const lastOffset =
@@ -114,6 +160,22 @@ export function MatchesPage() {
     setOffset(0);
     setTierFocus('all');
     clearSelection();
+  };
+
+  const selectSource = (value: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('opportunity');
+
+    if (value === allSourcesValue) {
+      nextParams.delete('source');
+    } else {
+      nextParams.set('source', value);
+    }
+
+    setSearchParams(nextParams, { replace: true });
+    setOffset(0);
+    setTierFocus('all');
+    setSelectedId(null);
   };
 
   const selectTier = (tier: MatchTierFocus) => {
@@ -169,14 +231,22 @@ export function MatchesPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+                <PremiumSelect
+                  value={selectedSource}
+                  onValueChange={selectSource}
+                  options={sourceOptions}
+                  label="Job platform"
+                  leadingIcon={<RadioTower className="h-3.5 w-3.5" />}
+                  triggerClassName="col-span-2 w-full sm:w-auto sm:min-w-40"
+                />
                 <PremiumSelect
                   value={String(minimumScore)}
                   onValueChange={(value) => selectMinimumScore(Number(value))}
                   options={minimumScoreOptions}
                   label="Minimum match score"
                   leadingIcon={<SlidersHorizontal className="h-3.5 w-3.5" />}
-                  triggerClassName="min-w-36"
+                  triggerClassName="w-full min-w-0 sm:w-auto sm:min-w-36"
                 />
                 <PremiumSelect
                   value={sort}
@@ -184,11 +254,11 @@ export function MatchesPage() {
                   options={sortOptions}
                   label="Sort loaded results"
                   leadingIcon={<ArrowDownUp className="h-3.5 w-3.5" />}
-                  triggerClassName="min-w-44"
+                  triggerClassName="w-full min-w-0 sm:w-auto sm:min-w-44"
                 />
 
                 <div
-                  className="flex rounded-xl border border-white/[0.07] bg-white/[0.025] p-1"
+                  className="col-span-2 flex w-fit rounded-xl border border-white/[0.07] bg-white/[0.025] p-1"
                   aria-label="View mode"
                 >
                   <button
@@ -269,7 +339,10 @@ export function MatchesPage() {
 
             <div className="flex min-h-9 flex-wrap items-center justify-between gap-2 border-t border-white/[0.04] px-4 py-1.5 text-[10px] sm:px-6 lg:px-7">
               <div className="flex flex-wrap items-center gap-3 text-zinc-700">
-                <span>Sort and tier focus apply to the loaded page only.</span>
+                <span>
+                  Platform and minimum score apply to all results. Sort and tier
+                  focus apply to the loaded page only.
+                </span>
                 {total !== undefined && total > 0 ? (
                   <span className="font-medium text-zinc-500">
                     Showing {offset + 1}–{Math.min(offset + pageSize, total)} of {total}

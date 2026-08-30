@@ -44,6 +44,7 @@ export interface JobsFilters {
 
 export interface MatchFilters {
   min_score?: number;
+  source?: string;
   limit?: number;
   offset?: number;
 }

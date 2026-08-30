@@ -1,11 +1,12 @@
 import {
   DndContext,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
-  closestCorners,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Archive, Columns3, Radar } from 'lucide-react';
@@ -13,14 +14,19 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { AppShell } from '../../components/app-shell';
-import { TrackerCard } from './tracker-card';
+import { TrackerCard, TrackerDragOverlayCard } from './tracker-card';
 import { TrackerColumn } from './tracker-column';
-import { getTrackerColumnId, getTrackerSortableId } from './tracker-dnd';
+import {
+  getTrackerColumnId,
+  getTrackerSortableId,
+  resolveTrackerDropTarget,
+  trackerCollisionDetection,
+  type TrackerDropData,
+} from './tracker-dnd';
 import { TrackerDetails } from './tracker-details';
 import {
   pipelineStatuses,
   type TrackerRecord,
-  type TrackerStatus,
 } from './tracker-schema';
 import {
   getActiveTrackerCount,
@@ -45,8 +51,9 @@ export function TrackerPage() {
   const trackerState = useTrackerState();
   const [view, setView] = useState<TrackerView>('pipeline');
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [activeDragId, setActiveDragId] = useState<number | null>(null);
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const activeCount = getActiveTrackerCount(trackerState);
@@ -57,9 +64,18 @@ export function TrackerPage() {
     selectedId === null
       ? null
       : trackerState.records[String(selectedId)] ?? null;
+  const activeDragRecord =
+    activeDragId === null
+      ? null
+      : trackerState.records[String(activeDragId)] ?? null;
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragId(getRecordIdFromSortableId(String(event.active.id)));
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveDragId(null);
 
     if (!over) {
       return;
@@ -71,26 +87,19 @@ export function TrackerPage() {
       return;
     }
 
-    const overData = over.data.current as
-      | { status?: TrackerStatus; opportunityId?: number }
-      | undefined;
-    const targetStatus = overData?.status;
+    const target = resolveTrackerDropTarget(
+      over.data.current as TrackerDropData | undefined,
+      trackerState.order,
+    );
 
-    if (!targetStatus || targetStatus === 'archived') {
+    if (!target) {
       return;
     }
 
-    const targetOrder = trackerState.order[targetStatus];
-    const overOpportunityId = overData?.opportunityId;
-    const targetIndex =
-      overOpportunityId === undefined
-        ? targetOrder.length
-        : targetOrder.indexOf(String(overOpportunityId));
-
     trackerStore.move(
       opportunityId,
-      targetStatus,
-      targetIndex < 0 ? targetOrder.length : targetIndex,
+      target.status,
+      target.index,
     );
   };
 
@@ -174,7 +183,9 @@ export function TrackerPage() {
             ) : view === 'pipeline' ? (
               <DndContext
                 sensors={sensors}
-                collisionDetection={closestCorners}
+                collisionDetection={trackerCollisionDetection}
+                onDragStart={handleDragStart}
+                onDragCancel={() => setActiveDragId(null)}
                 onDragEnd={handleDragEnd}
               >
                 <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-6 xl:h-full xl:grid-cols-4">
@@ -193,6 +204,11 @@ export function TrackerPage() {
                     );
                   })}
                 </div>
+                <DragOverlay adjustScale={false} dropAnimation={null}>
+                  {activeDragRecord ? (
+                    <TrackerDragOverlayCard record={activeDragRecord} />
+                  ) : null}
+                </DragOverlay>
               </DndContext>
             ) : archivedRecords.length > 0 ? (
               <DndContext>
