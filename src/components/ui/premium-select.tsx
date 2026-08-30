@@ -1,6 +1,6 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronDown } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 
 export interface SelectOption {
   value: string;
@@ -27,14 +27,23 @@ export function PremiumSelect({
   disabled = false,
 }: PremiumSelectProps) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const openedWithPointerRef = useRef(false);
   const selectedLabel = options.find((option) => option.value === value)?.label ?? value;
 
   return (
     <DropdownMenu.Root open={open} onOpenChange={setOpen} modal={false}>
       <DropdownMenu.Trigger
+        ref={triggerRef}
         aria-label={label}
         disabled={disabled}
-        className={`inline-flex h-10 items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-white/[0.08] bg-[#1a1b1d] px-3 text-xs text-zinc-300 outline-none transition-colors hover:border-white/[0.14] focus:border-radar/45 focus:ring-2 focus:ring-radar/10 disabled:cursor-not-allowed disabled:opacity-50 ${triggerClassName}`}
+        onPointerDown={() => {
+          openedWithPointerRef.current = true;
+        }}
+        onKeyDown={() => {
+          openedWithPointerRef.current = false;
+        }}
+        className={`inline-flex h-10 items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-white/[0.08] bg-[#1a1b1d] px-3 text-xs text-zinc-300 outline-none transition-colors hover:border-white/[0.14] focus-visible:border-radar/45 focus-visible:ring-2 focus-visible:ring-radar/10 data-[state=open]:border-radar/45 data-[state=open]:ring-2 data-[state=open]:ring-radar/10 disabled:cursor-not-allowed disabled:opacity-50 ${triggerClassName}`}
       >
         <span className="flex min-w-0 items-center gap-2 whitespace-nowrap">
           {leadingIcon}
@@ -48,6 +57,13 @@ export function PremiumSelect({
           align="start"
           sideOffset={6}
           collisionPadding={8}
+          onCloseAutoFocus={(event) => {
+            if (openedWithPointerRef.current) {
+              event.preventDefault();
+              triggerRef.current?.blur();
+            }
+            openedWithPointerRef.current = false;
+          }}
           className="z-[100] max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto rounded-xl border border-white/[0.09] bg-[#202124] p-1 shadow-2xl shadow-black/40"
         >
           <DropdownMenu.RadioGroup value={value} onValueChange={onValueChange}>
