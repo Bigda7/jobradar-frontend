@@ -46,10 +46,10 @@ export function SourcesPage() {
                 type="button"
                 onClick={() => sourcesQuery.refetch()}
                 disabled={sourcesQuery.isFetching}
-                className="inline-flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-xs text-zinc-500 hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-wait"
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 text-xs text-zinc-500 hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-wait"
               >
                 <RefreshCw
-                  className={`h-3.5 w-3.5 ${sourcesQuery.isFetching ? 'animate-spin text-radar' : ''}`}
+                  className={`h-4 w-4 ${sourcesQuery.isFetching ? 'animate-spin text-radar' : ''}`}
                 />
                 Refresh
               </button>
@@ -58,11 +58,11 @@ export function SourcesPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Open JobRadar service status in a new tab"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-xs text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 text-xs text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70 lg:hidden"
               >
-                <Activity className="h-3.5 w-3.5 text-radar" />
-                <span>Service status</span>
-                <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                <Activity className="h-4 w-4 text-radar" />
+                <span>Live status</span>
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
               </a>
             </div>
           </div>
