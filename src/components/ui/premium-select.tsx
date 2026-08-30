@@ -1,6 +1,6 @@
 import * as Select from '@radix-ui/react-select';
 import { Check, ChevronDown } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 export interface SelectOption {
   value: string;
@@ -26,17 +26,27 @@ export function PremiumSelect({
   triggerClassName = '',
   disabled = false,
 }: PremiumSelectProps) {
+  const [open, setOpen] = useState(false);
+
   return (
     <Select.Root
+      open={open}
+      onOpenChange={setOpen}
       value={value}
       onValueChange={onValueChange}
       disabled={disabled}
     >
       <Select.Trigger
         aria-label={label}
-        className={`inline-flex h-10 items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-[#1a1b1d] px-3 text-xs text-zinc-300 outline-none transition-colors hover:border-white/[0.14] focus:border-radar/45 focus:ring-2 focus:ring-radar/10 disabled:cursor-not-allowed disabled:opacity-50 ${triggerClassName}`}
+        onPointerDown={(event) => {
+          if (open) {
+            event.preventDefault();
+            setOpen(false);
+          }
+        }}
+        className={`inline-flex h-10 items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-white/[0.08] bg-[#1a1b1d] px-3 text-xs text-zinc-300 outline-none transition-colors hover:border-white/[0.14] focus:border-radar/45 focus:ring-2 focus:ring-radar/10 disabled:cursor-not-allowed disabled:opacity-50 ${triggerClassName}`}
       >
-        <span className="flex min-w-0 items-center gap-2">
+        <span className="flex min-w-0 items-center gap-2 whitespace-nowrap">
           {leadingIcon}
           <Select.Value />
         </span>

@@ -32,18 +32,28 @@ const workModes: { label: string; value: WorkMode }[] = [
   { label: 'Unknown', value: 'unknown' },
 ];
 
+const allEmploymentTypesValue = 'all';
+const employmentTypes = [
+  { label: 'Any employment type', value: allEmploymentTypesValue },
+  { label: 'Full time', value: 'full_time' },
+  { label: 'Part time', value: 'part_time' },
+  { label: 'Contract', value: 'contractor' },
+  { label: 'Temporary', value: 'temporary' },
+  { label: 'Internship', value: 'internship' },
+  { label: 'Volunteer', value: 'volunteer' },
+  { label: 'Other', value: 'other' },
+];
+
 export function JobsPage() {
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('q') ?? '');
   const [workMode, setWorkMode] = useState<WorkMode>('remote');
-  const [employmentType, setEmploymentType] = useState('');
+  const [employmentType, setEmploymentType] = useState(
+    allEmploymentTypesValue,
+  );
   const [minimumSalary, setMinimumSalary] = useState('');
   const [offset, setOffset] = useState(0);
   const debouncedSearch = useDebouncedValue(search, debounceDelay);
-  const debouncedEmploymentType = useDebouncedValue(
-    employmentType,
-    debounceDelay,
-  );
   const debouncedMinimumSalary = useDebouncedValue(
     minimumSalary,
     debounceDelay,
@@ -54,13 +64,14 @@ export function JobsPage() {
       createJobsFilters({
         search: debouncedSearch,
         workMode,
-        employmentType: debouncedEmploymentType,
+        employmentType:
+          employmentType === allEmploymentTypesValue ? '' : employmentType,
         minimumSalary: debouncedMinimumSalary,
         limit: pageSize,
         offset,
       }),
     [
-      debouncedEmploymentType,
+      employmentType,
       debouncedMinimumSalary,
       debouncedSearch,
       offset,
@@ -89,7 +100,7 @@ export function JobsPage() {
   const resetFilters = () => {
     setSearch('');
     setWorkMode('remote');
-    setEmploymentType('');
+    setEmploymentType(allEmploymentTypesValue);
     setMinimumSalary('');
     setOffset(0);
   };
@@ -151,19 +162,16 @@ export function JobsPage() {
               triggerClassName="h-11 w-full text-sm"
             />
 
-            <label>
-              <span className="sr-only">Employment type</span>
-              <input
-                type="text"
-                value={employmentType}
-                onChange={(event) => {
-                  setEmploymentType(event.target.value);
-                  setOffset(0);
-                }}
-                placeholder="Employment type, e.g. full_time"
-                className="h-11 w-full rounded-xl border border-white/[0.07] bg-white/[0.035] px-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-700 focus:border-radar/40 focus:ring-2 focus:ring-radar/10"
-              />
-            </label>
+            <PremiumSelect
+              value={employmentType}
+              onValueChange={(value) => {
+                setEmploymentType(value);
+                setOffset(0);
+              }}
+              options={employmentTypes}
+              label="Employment type"
+              triggerClassName="h-11 w-full text-sm"
+            />
 
             <label>
               <span className="sr-only">Minimum salary</span>
@@ -184,7 +192,8 @@ export function JobsPage() {
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px]">
             <span className="text-zinc-700">
-              Work mode is explicit; Remote matches the backend default.
+              Remote jobs are shown by default. Choose another work mode to
+              broaden your search.
             </span>
             <span
               className={
@@ -193,7 +202,7 @@ export function JobsPage() {
             >
               {searchNeedsMoreCharacters
                 ? 'Enter at least 2 characters to search.'
-                : 'Search updates after 350 ms.'}
+                : 'Results update as you type.'}
             </span>
           </div>
         </header>

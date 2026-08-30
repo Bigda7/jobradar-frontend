@@ -119,7 +119,6 @@ export function MatchesPage() {
   );
   const metrics = useMemo(() => getLoadedMatchMetrics(items), [items]);
   const trackedCount = getActiveTrackerCount(trackerState);
-  const rulesVersion = items[0]?.rules_version;
   const sourceOptions = useMemo(() => {
     const options = [
       { value: allSourcesValue, label: 'All platforms' },
@@ -254,11 +253,11 @@ export function MatchesPage() {
                   options={sortOptions}
                   label="Sort loaded results"
                   leadingIcon={<ArrowDownUp className="h-3.5 w-3.5" />}
-                  triggerClassName="w-full min-w-0 sm:w-auto sm:min-w-44"
+                  triggerClassName="w-full min-w-0 px-2 text-[11px] sm:w-auto sm:min-w-44 sm:px-3 sm:text-xs"
                 />
 
                 <div
-                  className="col-span-2 flex w-fit rounded-xl border border-white/[0.07] bg-white/[0.025] p-1"
+                  className="hidden w-fit rounded-xl border border-white/[0.07] bg-white/[0.025] p-1 md:flex"
                   aria-label="View mode"
                 >
                   <button
@@ -340,8 +339,7 @@ export function MatchesPage() {
             <div className="flex min-h-9 flex-wrap items-center justify-between gap-2 border-t border-white/[0.04] px-4 py-1.5 text-[10px] sm:px-6 lg:px-7">
               <div className="flex flex-wrap items-center gap-3 text-zinc-700">
                 <span>
-                  Platform and minimum score apply to all results. Sort and tier
-                  focus apply to the loaded page only.
+                  Sorting and match groups apply to the jobs shown on this page.
                 </span>
                 {total !== undefined && total > 0 ? (
                   <span className="font-medium text-zinc-500">
@@ -370,9 +368,6 @@ export function MatchesPage() {
                     </button>
                   </>
                 ) : null}
-                <span className="max-w-[36vw] truncate text-zinc-700">
-                  {rulesVersion ? `Rules: ${rulesVersion}` : 'Rules unavailable'}
-                </span>
               </div>
             </div>
           </header>
@@ -459,17 +454,29 @@ export function MatchesPage() {
                 ))}
               </div>
             ) : (
-              <div className="mx-auto max-w-5xl space-y-2 p-4 sm:p-5 lg:p-6">
-                {focusedItems.map((match) => (
-                  <MatchCard
-                    key={match.id}
-                    match={match}
-                    compact
-                    isSelected={selectedMatch?.id === match.id}
-                    onSelect={openMatch}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 gap-3 p-4 sm:p-5 md:hidden">
+                  {focusedItems.map((match) => (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      isSelected={selectedMatch?.id === match.id}
+                      onSelect={openMatch}
+                    />
+                  ))}
+                </div>
+                <div className="mx-auto hidden max-w-5xl space-y-2 p-4 sm:p-5 md:block lg:p-6">
+                  {focusedItems.map((match) => (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      compact
+                      isSelected={selectedMatch?.id === match.id}
+                      onSelect={openMatch}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
