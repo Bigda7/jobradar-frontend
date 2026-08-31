@@ -10,7 +10,6 @@ import type {
   matchResponseSchema,
   opportunityKindSchema,
   opportunityStatusSchema,
-  readinessResponseSchema,
   sourceResponseSchema,
   workModeSchema,
 } from './schemas';
@@ -25,7 +24,6 @@ export type JobListResponse = z.infer<typeof jobListResponseSchema>;
 export type MatchListResponse = z.infer<typeof matchListResponseSchema>;
 export type SourceResponse = z.infer<typeof sourceResponseSchema>;
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
-export type ReadinessResponse = z.infer<typeof readinessResponseSchema>;
 export type FastApiValidationIssue = z.infer<
   typeof fastApiValidationIssueSchema
 >;

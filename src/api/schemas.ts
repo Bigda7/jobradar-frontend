@@ -99,10 +99,6 @@ export const healthResponseSchema = z.object({
   status: z.literal('ok'),
 });
 
-export const readinessResponseSchema = z.object({
-  status: z.literal('ready'),
-});
-
 export const fastApiValidationIssueSchema = z.object({
   type: z.string(),
   loc: z.array(z.union([z.string(), z.number()])),
