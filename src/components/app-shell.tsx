@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
-import { ApiReadyIndicator } from './api-ready-indicator';
 import { CommandPalette } from './command-palette';
 import { serviceStatusUrl } from '../service-status';
 import {
@@ -69,7 +68,7 @@ export function AppShell({ children, matchCount }: AppShellProps) {
               JobRadar
             </span>
             <span className="block text-[11px] text-zinc-600">
-              Opportunity intelligence
+              Job search workspace
             </span>
           </span>
         </div>
@@ -131,17 +130,12 @@ export function AppShell({ children, matchCount }: AppShellProps) {
         </nav>
 
         <div className="border-t border-white/[0.06] p-3">
-          <ApiReadyIndicator />
-          <div className="mt-3 flex items-center gap-2 px-2 text-[11px] text-zinc-700">
-            <BriefcaseBusiness className="h-3.5 w-3.5" />
-            <span>Backend read-only · Tracker local</span>
-          </div>
           <a
             href={serviceStatusUrl}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Open JobRadar service status in a new tab"
-            className="mt-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] text-zinc-600 transition-colors hover:bg-white/[0.035] hover:text-radar focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] text-zinc-600 transition-colors hover:bg-white/[0.035] hover:text-radar focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
           >
             <Activity className="h-3.5 w-3.5" />
             <span>Live service status</span>
