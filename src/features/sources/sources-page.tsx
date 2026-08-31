@@ -70,8 +70,7 @@ export function SourcesPage() {
             </div>
           </div>
           <p className="mt-3 max-w-3xl text-[11px] leading-5 text-zinc-700">
-            Enabled state, timestamps, and the last reported error are shown
-            independently. No runtime status is inferred.
+            Latest collection activity and reported errors.
           </p>
         </header>
 
