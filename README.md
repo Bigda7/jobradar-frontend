@@ -19,6 +19,11 @@ The interface combines ranked matches, a searchable job catalog, source monitori
 - Ships through GitHub Actions with locked dependencies, tests, type checking, linting, production builds, dependency auditing, and secret scanning.
 - Runs behind Vercel security headers and edge rate limiting, with independent monitoring for the frontend, backend, and full proxy path.
 
+## Architectural Evolution: Personal Client to SaaS v2
+
+- **v1.0 (Current Live Production):** High-density single-tenant dashboard with ranked feed, full-text job search, source health monitoring, and a local drag-and-drop Kanban pipeline with Zod runtime validation.
+- **v2.0 (In Active Private Staging):** Multi-tenant SaaS client introducing user sessions, authentication flows, per-user search profiles and scoring criteria, server-persisted Kanban sync, and dedicated account management and notification configuration views.
+
 ## Production Architecture
 
 ```mermaid
