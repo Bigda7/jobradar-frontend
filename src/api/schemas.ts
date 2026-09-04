@@ -91,6 +91,13 @@ export const sourceResponseSchema = z.object({
   last_run_at: dateTimeSchema.nullable(),
   last_success_at: dateTimeSchema.nullable(),
   last_error: longExternalTextSchema.nullable(),
+  last_run_status: shortExternalTextSchema.nullable().default(null),
+  last_discovered_count: z.number().int().nonnegative().nullable().default(null),
+  last_created_count: z.number().int().nonnegative().nullable().default(null),
+  last_updated_count: z.number().int().nonnegative().nullable().default(null),
+  last_unchanged_count: z.number().int().nonnegative().nullable().default(null),
+  last_deactivated_count: z.number().int().nonnegative().nullable().default(null),
+  last_error_count: z.number().int().nonnegative().nullable().default(null),
 });
 
 export const sourceListResponseSchema = z.array(sourceResponseSchema).max(200);
