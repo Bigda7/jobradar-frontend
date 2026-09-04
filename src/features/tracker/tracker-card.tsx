@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { CalendarDays, GripVertical, StickyNote } from 'lucide-react';
-import type { CSSProperties, ReactNode, Ref } from 'react';
+import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from 'react';
 
 import { formatLabel, formatRelativeDate } from '../matches/formatters';
 import type { TrackerRecord } from './tracker-schema';
@@ -36,22 +36,26 @@ function TrackerCardContent({
   overlay = false,
 }: TrackerCardContentProps) {
   const salary = formatTrackerSalary(record.snapshot);
-  const heading = (
-    <>
-      <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.09em] text-zinc-600">
-        {record.snapshot.company ?? 'Company not specified'}
-      </span>
-      <h3 className="mt-2 line-clamp-2 break-words text-sm font-semibold leading-5 text-zinc-100">
-        {record.snapshot.title}
-      </h3>
-    </>
-  );
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (
+      onSelect &&
+      event.target === event.currentTarget &&
+      (event.key === 'Enter' || event.key === ' ')
+    ) {
+      event.preventDefault();
+      onSelect(record);
+    }
+  };
 
   return (
     <article
       ref={nodeRef}
       style={style}
-      className={`rounded-xl border bg-card p-4 transition-colors ${
+      onClick={onSelect ? () => onSelect(record) : undefined}
+      onKeyDown={onSelect ? handleKeyDown : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      aria-label={onSelect ? `Open details for ${record.snapshot.title}` : undefined}
+      className={`rounded-xl border bg-card p-4 outline-none transition-colors ${
         overlay
           ? 'border-radar/45 shadow-2xl shadow-black/45'
           : 'shadow-sm shadow-black/10'
@@ -60,21 +64,18 @@ function TrackerCardContent({
           ? 'border-radar/25 opacity-20'
           : overlay
             ? ''
-            : 'border-white/[0.07] hover:border-white/[0.12]'
+            : 'cursor-pointer border-white/[0.07] hover:border-white/[0.12] hover:bg-[#292a2d] focus-visible:border-radar/45 focus-visible:ring-2 focus-visible:ring-radar/10'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        {onSelect ? (
-          <button
-            type="button"
-            onClick={() => onSelect(record)}
-            className="min-w-0 flex-1 text-left outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-radar/40"
-          >
-            {heading}
-          </button>
-        ) : (
-          <div className="min-w-0 flex-1 text-left">{heading}</div>
-        )}
+        <div className="min-w-0 flex-1 text-left">
+          <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.09em] text-zinc-600">
+            {record.snapshot.company ?? 'Company not specified'}
+          </span>
+          <h3 className="mt-2 line-clamp-2 break-words text-sm font-semibold leading-5 text-zinc-100">
+            {record.snapshot.title}
+          </h3>
+        </div>
         {dragHandle}
       </div>
 
@@ -152,16 +153,22 @@ export function TrackerCard({
       dragging={sortableState.isDragging}
       dragHandle={
         sortable ? (
-          <button
-            type="button"
-            ref={sortableState.setActivatorNodeRef}
-            {...sortableState.attributes}
-            {...sortableState.listeners}
-            className="grid h-8 w-8 shrink-0 touch-none cursor-grab place-items-center rounded-lg border border-white/[0.06] text-zinc-700 hover:bg-white/[0.04] hover:text-zinc-400 active:cursor-grabbing"
-            aria-label={`Drag ${record.snapshot.title}`}
+          <span
+            className="hidden md:block"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
           >
-            <GripVertical className="h-4 w-4" />
-          </button>
+            <button
+              type="button"
+              ref={sortableState.setActivatorNodeRef}
+              {...sortableState.attributes}
+              {...sortableState.listeners}
+              className="grid h-8 w-8 shrink-0 touch-none cursor-grab place-items-center rounded-lg border border-white/[0.06] text-zinc-700 hover:bg-white/[0.04] hover:text-zinc-400 active:cursor-grabbing"
+              aria-label={`Drag ${record.snapshot.title}`}
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+          </span>
         ) : undefined
       }
     />

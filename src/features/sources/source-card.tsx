@@ -32,7 +32,30 @@ function formatAbsoluteDate(value: string | null): string | undefined {
     : absoluteDateFormatter.format(timestamp);
 }
 
+function formatLastResult(source: SourceResponse): string | null {
+  if (source.last_discovered_count === null) {
+    return null;
+  }
+
+  const parts = [
+    `${source.last_discovered_count} found`,
+    `${source.last_created_count ?? 0} new`,
+    `${source.last_updated_count ?? 0} changed`,
+  ];
+
+  if ((source.last_deactivated_count ?? 0) > 0) {
+    parts.push(`${source.last_deactivated_count} retired`);
+  }
+  if ((source.last_error_count ?? 0) > 0) {
+    parts.push(`${source.last_error_count} failed`);
+  }
+
+  return parts.join(' · ');
+}
+
 export function SourceCard({ source }: SourceCardProps) {
+  const lastResult = formatLastResult(source);
+
   return (
     <article className="flex min-h-72 flex-col rounded-2xl border border-white/[0.07] bg-card p-5">
       <header className="flex items-start justify-between gap-4">
@@ -93,6 +116,17 @@ export function SourceCard({ source }: SourceCardProps) {
           </dd>
         </div>
       </dl>
+
+      {lastResult ? (
+        <div className="mt-4 rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-2.5">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-zinc-700">
+            Last result
+          </p>
+          <p className="mt-1 text-[11px] leading-5 text-zinc-400">
+            {lastResult}
+          </p>
+        </div>
+      ) : null}
 
       <div className="mt-auto pt-5">
         {source.last_error ? (

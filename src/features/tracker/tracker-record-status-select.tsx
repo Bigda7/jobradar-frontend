@@ -13,21 +13,23 @@ export function TrackerRecordStatusSelect({
   compact = false,
 }: TrackerRecordStatusSelectProps) {
   return (
-    <PremiumSelect
-      value={record.status}
-      onValueChange={(status) => {
-        if (status === 'remove') {
-          trackerStore.removeOpportunity(record.opportunityId);
-        } else {
-          trackerStore.setStatus(
-            record.opportunityId,
-            status as TrackerStatus,
-          );
-        }
-      }}
-      options={trackerStatusSelectOptionsWithRemove}
-      label={`Tracker status for ${record.snapshot.title}`}
-      triggerClassName={compact ? 'h-8 px-2.5 text-[11px]' : 'min-w-36'}
-    />
+    <div onClick={(event) => event.stopPropagation()}>
+      <PremiumSelect
+        value={record.status}
+        onValueChange={(status) => {
+          if (status === 'remove') {
+            trackerStore.removeOpportunity(record.opportunityId);
+          } else {
+            trackerStore.setStatus(
+              record.opportunityId,
+              status as TrackerStatus,
+            );
+          }
+        }}
+        options={trackerStatusSelectOptionsWithRemove}
+        label={`Tracker status for ${record.snapshot.title}`}
+        triggerClassName={compact ? 'h-8 px-2.5 text-[11px]' : 'min-w-36'}
+      />
+    </div>
   );
 }

@@ -13,12 +13,14 @@ interface TrackerColumnProps {
   status: TrackerStatus;
   records: TrackerRecord[];
   onSelect: (record: TrackerRecord) => void;
+  className?: string;
 }
 
 export function TrackerColumn({
   status,
   records,
   onSelect,
+  className = '',
 }: TrackerColumnProps) {
   const droppable = useDroppable({
     id: getTrackerColumnId(status),
@@ -27,7 +29,7 @@ export function TrackerColumn({
   const meta = trackerStatusMeta[status];
 
   return (
-    <section className="min-w-0 lg:flex lg:min-h-0 lg:flex-col">
+    <section className={`min-w-0 md:flex md:min-h-0 md:flex-col ${className}`}>
       <header className="mb-3 flex h-10 shrink-0 items-center justify-between gap-3 px-1">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -49,7 +51,11 @@ export function TrackerColumn({
       >
         <div
           ref={droppable.setNodeRef}
-          className={`premium-scrollbar min-h-28 space-y-2.5 rounded-2xl border p-2 transition-colors lg:min-h-0 lg:flex-1 lg:overflow-y-auto ${
+          className={`premium-scrollbar space-y-2.5 rounded-2xl border p-2 transition-colors ${
+            records.length > 0
+              ? 'min-h-28 md:min-h-0 md:flex-1 md:overflow-y-auto'
+              : 'min-h-28 md:min-h-0'
+          } ${
             droppable.isOver
               ? 'border-radar/25 bg-radar/[0.035]'
               : 'border-white/[0.045] bg-white/[0.018]'

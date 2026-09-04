@@ -24,9 +24,11 @@ import {
   type TrackerDropData,
 } from './tracker-dnd';
 import { TrackerDetails } from './tracker-details';
+import { trackerStatusMeta } from './tracker-config';
 import {
   pipelineStatuses,
   type TrackerRecord,
+  type TrackerStatus,
 } from './tracker-schema';
 import {
   getActiveTrackerCount,
@@ -50,6 +52,11 @@ function getRecordIdFromSortableId(id: string): number | null {
 export function TrackerPage() {
   const trackerState = useTrackerState();
   const [view, setView] = useState<TrackerView>('pipeline');
+  const initialMobileStatus =
+    pipelineStatuses.find((status) => trackerState.order[status].length > 0) ??
+    'saved';
+  const [mobileStatus, setMobileStatus] =
+    useState<TrackerStatus>(initialMobileStatus);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [activeDragId, setActiveDragId] = useState<number | null>(null);
   const sensors = useSensors(
@@ -155,7 +162,12 @@ export function TrackerPage() {
               </div>
             </div>
             <p className="mt-3 text-[11px] text-zinc-700">
-              Stored only in this browser. Drag cards or use the status menu.
+              <span className="md:hidden">
+                Stored only in this browser. Use the status menu to move cards.
+              </span>
+              <span className="hidden md:inline">
+                Stored only in this browser. Drag cards or use the status menu.
+              </span>
             </p>
           </header>
 
@@ -188,7 +200,41 @@ export function TrackerPage() {
                 onDragCancel={() => setActiveDragId(null)}
                 onDragEnd={handleDragEnd}
               >
-                <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-6 xl:h-full xl:grid-cols-4">
+                <div className="px-4 pt-4 md:hidden">
+                  <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-700">
+                    Pipeline stage
+                  </p>
+                  <div className="grid grid-cols-2 gap-2" aria-label="Pipeline stage">
+                    {pipelineStatuses.map((status) => {
+                      const meta = trackerStatusMeta[status];
+                      const selected = mobileStatus === status;
+
+                      return (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => setMobileStatus(status)}
+                          aria-pressed={selected}
+                          className={`flex h-10 items-center justify-between rounded-xl border px-3 text-xs transition-colors ${
+                            selected
+                              ? 'border-radar/35 bg-radar/[0.08] text-radar'
+                              : 'border-white/[0.07] bg-white/[0.02] text-zinc-500'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className={`h-2 w-2 rounded-full ${meta.markerClassName}`} />
+                            {meta.label}
+                          </span>
+                          <span className={selected ? 'text-radar/70' : 'text-zinc-700'}>
+                            {trackerState.order[status].length}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 p-4 md:grid-cols-2 md:p-6 xl:h-full xl:grid-cols-4">
                   {pipelineStatuses.map((status) => {
                     const records = trackerState.order[status]
                       .map((id) => trackerState.records[id])
@@ -200,6 +246,7 @@ export function TrackerPage() {
                         status={status}
                         records={records}
                         onSelect={(record) => setSelectedId(record.opportunityId)}
+                        className={status === mobileStatus ? '' : 'hidden md:flex'}
                       />
                     );
                   })}
