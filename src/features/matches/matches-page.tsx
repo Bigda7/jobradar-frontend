@@ -212,7 +212,7 @@ export function MatchesPage() {
     <AppShell matchCount={total}>
       <main className="flex min-h-[calc(100vh-64px)] min-w-0 bg-canvas lg:h-screen lg:min-h-0">
         <section className="flex min-w-0 flex-1 flex-col">
-          <header className="shrink-0 border-b border-white/[0.06] bg-[#121314]">
+          <header className="shrink-0 border-b border-white/[0.06] bg-panel">
             <div className="flex min-h-[76px] flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-7">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-xs text-zinc-600">
@@ -304,7 +304,7 @@ export function MatchesPage() {
                       aria-pressed={tierFocus === chip.value}
                       className={`w-full rounded-full px-3 py-1.5 text-[10px] font-medium transition-colors sm:w-auto ${
                         tierFocus === chip.value
-                          ? 'bg-radar text-[#15170f]'
+                          ? 'bg-radar-selection text-radar-selection-ink'
                           : 'border border-white/[0.07] bg-white/[0.025] text-zinc-500 hover:text-zinc-200'
                       }`}
                     >
@@ -481,7 +481,7 @@ export function MatchesPage() {
           </div>
 
           {total !== undefined && total > pageSize ? (
-            <footer className="flex shrink-0 items-center justify-between border-t border-white/[0.06] bg-[#121314] px-4 py-3 text-xs sm:px-6">
+            <footer className="flex shrink-0 items-center justify-between border-t border-white/[0.06] bg-panel px-4 py-3 text-xs sm:px-6">
               <span className="text-zinc-600">
                 {offset + 1}–{Math.min(offset + pageSize, total)} of {total}
               </span>

@@ -64,7 +64,7 @@ function TrackerCardContent({
           ? 'border-radar/25 opacity-20'
           : overlay
             ? ''
-            : 'cursor-pointer border-white/[0.07] hover:border-white/[0.12] hover:bg-[#292a2d] focus-visible:border-radar/45 focus-visible:ring-2 focus-visible:ring-radar/10'
+            : 'cursor-pointer border-white/[0.07] hover:border-white/[0.12] hover:bg-card-hover focus-visible:border-radar/45 focus-visible:ring-2 focus-visible:ring-radar/10'
       }`}
     >
       <div className="flex items-start justify-between gap-3">

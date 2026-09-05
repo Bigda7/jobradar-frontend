@@ -12,6 +12,7 @@ import { NavLink } from 'react-router-dom';
 
 import { BrandMark } from './brand-mark';
 import { CommandPalette } from './command-palette';
+import { ThemeToggle } from './theme-toggle';
 import { serviceStatusUrl } from '../service-status';
 import {
   getCommandPaletteShortcutLabel,
@@ -59,25 +60,26 @@ export function AppShell({ children, matchCount }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-canvas text-zinc-100 lg:grid lg:h-screen lg:grid-cols-[248px_minmax(0,1fr)] lg:overflow-hidden">
-      <aside className="hidden border-r border-white/[0.06] bg-[#121314] lg:flex lg:min-h-0 lg:flex-col">
-        <div className="flex h-[76px] items-center border-b border-white/[0.06] px-5">
+      <aside className="hidden border-r border-white/[0.06] bg-panel lg:flex lg:min-h-0 lg:flex-col">
+        <div className="flex h-[76px] items-center gap-2 border-b border-white/[0.06] px-5">
           <NavLink
             to="/matches"
             aria-label="Go to matches"
-            className="flex items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
           >
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-radar text-[#11130e] shadow-[0_0_24px_rgb(163_230_53/14%)]">
+            <span className="brand-mark-surface grid h-10 w-10 place-items-center rounded-xl">
               <BrandMark className="h-5 w-5" />
             </span>
-            <span>
+            <span className="min-w-0">
               <span className="block text-sm font-semibold tracking-tight">
                 JobRadar
               </span>
-              <span className="block text-[11px] text-zinc-600">
+              <span className="block truncate text-[11px] text-zinc-600">
                 Job search workspace
               </span>
             </span>
           </NavLink>
+          <ThemeToggle />
         </div>
 
         <div className="px-3 pt-4">
@@ -121,7 +123,7 @@ export function AppShell({ children, matchCount }: AppShellProps) {
                     />
                     <span>{label}</span>
                     {to === '/matches' && matchCount !== undefined ? (
-                      <span className="ml-auto rounded-full bg-radar px-2 py-0.5 text-[10px] font-bold text-[#11130e]">
+                      <span className="ml-auto rounded-full bg-radar-fill px-2 py-0.5 text-[10px] font-bold text-radar-fill-ink">
                         {matchCount}
                       </span>
                     ) : to === '/tracker' && trackedCount > 0 ? (
@@ -152,19 +154,22 @@ export function AppShell({ children, matchCount }: AppShellProps) {
       </aside>
 
       <div className="min-w-0 lg:min-h-0 lg:overflow-hidden">
-        <header className="flex h-16 items-center justify-between border-b border-white/[0.06] bg-[#121314] px-4 lg:hidden">
-          <NavLink
-            to="/matches"
-            aria-label="Go to matches"
-            className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
-          >
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-radar text-[#11130e]">
-              <BrandMark className="h-4 w-4" />
-            </span>
-            <span className="hidden text-sm font-semibold sm:inline">
-              JobRadar
-            </span>
-          </NavLink>
+        <header className="flex h-16 items-center justify-between border-b border-white/[0.06] bg-panel px-4 lg:hidden">
+          <div className="flex items-center gap-2">
+            <NavLink
+              to="/matches"
+              aria-label="Go to matches"
+              className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
+            >
+              <span className="brand-mark-surface grid h-8 w-8 place-items-center rounded-lg">
+                <BrandMark className="h-4 w-4" />
+              </span>
+              <span className="hidden text-sm font-semibold sm:inline">
+                JobRadar
+              </span>
+            </NavLink>
+            <ThemeToggle />
+          </div>
           <div className="flex items-center gap-1">
             <button
               type="button"

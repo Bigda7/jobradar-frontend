@@ -19,7 +19,7 @@ export function JobCard({ job }: JobCardProps) {
   const kindLabel = job.kind === 'employment' ? 'Job' : formatLabel(job.kind);
 
   return (
-    <article className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-card p-5 transition-colors hover:border-white/[0.12] hover:bg-[#292a2d]">
+    <article className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-card p-5 transition-colors hover:border-white/[0.12] hover:bg-card-hover">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="truncate text-[11px] font-medium uppercase tracking-[0.09em] text-zinc-500">

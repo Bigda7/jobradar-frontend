@@ -102,7 +102,7 @@ export function CommandPalette({
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[110] bg-black/65 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out" />
-        <Dialog.Content className="fixed left-1/2 top-[14vh] z-[120] w-[min(640px,calc(100%-24px))] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/[0.1] bg-[#191a1c] shadow-[0_28px_100px_rgb(0_0_0/60%)] outline-none">
+        <Dialog.Content className="fixed left-1/2 top-[14vh] z-[120] w-[min(640px,calc(100%-24px))] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/[0.1] bg-surface shadow-[0_28px_100px_rgb(0_0_0/60%)] outline-none">
           <Dialog.Title className="sr-only">JobRadar command palette</Dialog.Title>
           <Command shouldFilter={false} className="bg-transparent text-zinc-100">
             <div className="flex h-14 items-center gap-3 border-b border-white/[0.07] px-4">
@@ -158,7 +158,7 @@ export function CommandPalette({
                       }
                       className="mt-1 flex cursor-default items-center gap-3 rounded-xl px-3 py-3 font-normal normal-case tracking-normal outline-none data-[selected=true]:bg-white/[0.07]"
                     >
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-radar text-xs font-bold text-[#15170f]">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-radar-fill text-xs font-bold text-radar-fill-ink">
                         {match.score}
                       </span>
                       <span className="min-w-0">
