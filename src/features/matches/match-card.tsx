@@ -46,7 +46,7 @@ export function MatchCard({
       } ${
         isSelected
           ? 'border-radar/45 bg-radar/[0.055] shadow-[0_0_0_1px_rgb(163_230_53/8%)]'
-          : 'border-white/[0.07] bg-card hover:-translate-y-0.5 hover:border-white/[0.12] hover:bg-[#292a2d]'
+          : 'border-white/[0.07] bg-card hover:-translate-y-0.5 hover:border-white/[0.12] hover:bg-card-hover'
       }`}
     >
       <div className="min-w-0">
@@ -56,7 +56,7 @@ export function MatchCard({
           </span>
           <div className="flex shrink-0 items-center gap-2">
             {!compact ? (
-              <span className="rounded-full bg-radar px-2 py-1 text-[11px] font-bold text-[#15170f]">
+              <span className="rounded-full bg-radar-fill px-2 py-1 text-[11px] font-bold text-radar-fill-ink">
                 {match.score}%
               </span>
             ) : null}
@@ -113,7 +113,7 @@ export function MatchCard({
 
       {compact ? (
         <div className="flex items-center justify-between gap-3 sm:justify-end">
-          <span className="rounded-full bg-radar px-2.5 py-1 text-xs font-bold text-[#15170f]">
+          <span className="rounded-full bg-radar-fill px-2.5 py-1 text-xs font-bold text-radar-fill-ink">
             {match.score}%
           </span>
           <span className="grid h-8 w-8 place-items-center rounded-lg border border-white/[0.07]">

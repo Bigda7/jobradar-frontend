@@ -75,7 +75,7 @@ export function SourceCard({ source }: SourceCardProps) {
         <span
           className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
             source.enabled
-              ? 'bg-radar text-[#15170f]'
+              ? 'bg-radar-fill text-radar-fill-ink'
               : 'bg-zinc-700 text-zinc-300'
           }`}
         >

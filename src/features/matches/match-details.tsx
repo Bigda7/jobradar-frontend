@@ -45,7 +45,7 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
         aria-modal={isModal || undefined}
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-white/[0.08] bg-[#151617] shadow-[-24px_0_80px_rgb(0_0_0/35%)] outline-none sm:max-w-[480px] xl:static xl:z-auto xl:max-w-[430px] xl:shrink-0 xl:shadow-none"
+        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-white/[0.08] bg-panel shadow-[-24px_0_80px_rgb(0_0_0/35%)] outline-none sm:max-w-[480px] xl:static xl:z-auto xl:max-w-[430px] xl:shrink-0 xl:shadow-none"
       >
       <div className="flex h-[76px] shrink-0 items-center justify-between border-b border-white/[0.07] px-5">
         <div>
@@ -79,7 +79,7 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
               <p className="mt-2 text-sm text-zinc-500">{match.company}</p>
             ) : null}
           </div>
-          <span className="shrink-0 rounded-xl bg-radar px-3 py-2 text-sm font-bold text-[#15170f]">
+          <span className="shrink-0 rounded-xl bg-radar-fill px-3 py-2 text-sm font-bold text-radar-fill-ink">
             {match.score}%
           </span>
         </div>
@@ -165,12 +165,12 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
       </div>
 
         {sourceUrl ? (
-          <div className="shrink-0 border-t border-white/[0.07] bg-[#151617] p-4">
+          <div className="shrink-0 border-t border-white/[0.07] bg-panel p-4">
             <a
               href={sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-radar px-4 py-3 text-sm font-semibold text-[#15170f] transition-colors hover:bg-lime-300"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-radar-fill px-4 py-3 text-sm font-semibold text-radar-fill-ink transition-colors hover:bg-radar-fill-hover"
             >
               Open vacancy
               <ExternalLink className="h-4 w-4" />

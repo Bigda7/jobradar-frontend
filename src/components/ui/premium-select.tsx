@@ -43,7 +43,7 @@ export function PremiumSelect({
         onKeyDown={() => {
           openedWithPointerRef.current = false;
         }}
-        className={`inline-flex h-10 items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-white/[0.08] bg-[#1a1b1d] px-3 text-xs text-zinc-300 outline-none transition-colors hover:border-white/[0.14] focus-visible:border-radar/45 focus-visible:ring-2 focus-visible:ring-radar/10 data-[state=open]:border-radar/45 data-[state=open]:ring-2 data-[state=open]:ring-radar/10 disabled:cursor-not-allowed disabled:opacity-50 ${triggerClassName}`}
+        className={`inline-flex h-10 items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-white/[0.08] bg-surface px-3 text-xs text-zinc-300 outline-none transition-colors hover:border-white/[0.14] focus-visible:border-radar/45 focus-visible:ring-2 focus-visible:ring-radar/10 data-[state=open]:border-radar/45 data-[state=open]:ring-2 data-[state=open]:ring-radar/10 disabled:cursor-not-allowed disabled:opacity-50 ${triggerClassName}`}
       >
         <span className="flex min-w-0 items-center gap-2 whitespace-nowrap">
           {leadingIcon}
@@ -64,7 +64,7 @@ export function PremiumSelect({
             }
             openedWithPointerRef.current = false;
           }}
-          className="z-[100] max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto rounded-xl border border-white/[0.09] bg-[#202124] p-1 shadow-2xl shadow-black/40"
+          className="z-[100] max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto rounded-xl border border-white/[0.09] bg-card p-1 shadow-2xl shadow-black/40"
         >
           <DropdownMenu.RadioGroup value={value} onValueChange={onValueChange}>
             {options.map((option) => (

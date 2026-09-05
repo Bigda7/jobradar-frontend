@@ -108,7 +108,7 @@ export function JobsPage() {
   return (
     <AppShell>
       <main className="flex min-h-[calc(100vh-64px)] min-w-0 flex-col bg-canvas lg:h-screen lg:min-h-0">
-        <header className="shrink-0 border-b border-white/[0.06] bg-[#121314] px-4 py-5 sm:px-6 lg:px-7">
+        <header className="shrink-0 border-b border-white/[0.06] bg-panel px-4 py-5 sm:px-6 lg:px-7">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 text-xs text-zinc-600">
@@ -272,7 +272,7 @@ export function JobsPage() {
         </div>
 
         {total !== undefined ? (
-          <footer className="flex shrink-0 items-center justify-between border-t border-white/[0.06] bg-[#121314] px-4 py-3 text-xs sm:px-6">
+          <footer className="flex shrink-0 items-center justify-between border-t border-white/[0.06] bg-panel px-4 py-3 text-xs sm:px-6">
             <span className="text-zinc-600">
               {total === 0
                 ? '0 results'
