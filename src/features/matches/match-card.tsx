@@ -39,7 +39,7 @@ export function MatchCard({
       }}
       tabIndex={0}
       aria-label={`Open details for ${match.title}`}
-      className={`group w-full cursor-pointer text-left transition-all ${
+      className={`group w-full cursor-pointer text-left outline-none transition-all focus-visible:border-radar/45 focus-visible:ring-2 focus-visible:ring-radar/10 ${
         compact
           ? 'grid gap-4 rounded-xl border px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center'
           : 'rounded-xl border p-4'

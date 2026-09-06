@@ -7,6 +7,7 @@ import {
   RadioTower,
   Radar,
   Search,
+  ShieldCheck,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
@@ -60,6 +61,12 @@ export function AppShell({ children, matchCount }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-canvas text-zinc-100 lg:grid lg:h-screen lg:grid-cols-[248px_minmax(0,1fr)] lg:overflow-hidden">
+      <a
+        href="#main-content"
+        className="fixed left-4 top-4 z-[200] -translate-y-24 rounded-lg bg-radar-fill px-3 py-2 text-sm font-semibold text-radar-fill-ink shadow-lg transition-transform focus:translate-y-0"
+      >
+        Skip to main content
+      </a>
       <aside className="hidden border-r border-white/[0.06] bg-panel lg:flex lg:min-h-0 lg:flex-col">
         <div className="flex h-[76px] items-center gap-2 border-b border-white/[0.06] px-5">
           <NavLink
@@ -86,9 +93,9 @@ export function AppShell({ children, matchCount }: AppShellProps) {
           <button
             type="button"
             onClick={() => setCommandOpen(true)}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5 text-xs text-zinc-600 hover:bg-white/[0.045] hover:text-zinc-300"
+            className="flex w-full items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5 text-xs text-zinc-600 hover:bg-white/[0.045] hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
           >
-            <Search className="h-3.5 w-3.5" />
+            <Search className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Quick search</span>
             <kbd className="ml-auto rounded border border-white/[0.07] px-1.5 py-0.5 text-[9px] text-zinc-700">
               {commandShortcutLabel}
@@ -109,7 +116,7 @@ export function AppShell({ children, matchCount }: AppShellProps) {
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                  `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70 ${
                     isActive
                       ? 'bg-white/[0.065] text-white'
                       : 'text-zinc-500 hover:bg-white/[0.035] hover:text-zinc-200'
@@ -120,6 +127,7 @@ export function AppShell({ children, matchCount }: AppShellProps) {
                   <>
                     <Icon
                       className={`h-[17px] w-[17px] ${isActive ? 'text-radar' : 'text-zinc-600 group-hover:text-zinc-400'}`}
+                      aria-hidden="true"
                     />
                     <span>{label}</span>
                     {to === '/matches' && matchCount !== undefined ? (
@@ -138,7 +146,20 @@ export function AppShell({ children, matchCount }: AppShellProps) {
           </div>
         </nav>
 
-        <div className="border-t border-white/[0.06] p-3">
+        <div className="space-y-1 border-t border-white/[0.06] p-3">
+          <NavLink
+            to="/legal"
+            className={({ isActive }) =>
+              `flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70 ${
+                isActive
+                  ? 'bg-white/[0.05] text-zinc-300'
+                  : 'text-zinc-600 hover:bg-white/[0.035] hover:text-zinc-300'
+              }`
+            }
+          >
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Privacy &amp; legal</span>
+          </NavLink>
           <a
             href={serviceStatusUrl}
             target="_blank"
@@ -175,9 +196,9 @@ export function AppShell({ children, matchCount }: AppShellProps) {
               type="button"
               onClick={() => setCommandOpen(true)}
               aria-label="Open command palette"
-              className="grid h-9 w-9 place-items-center rounded-lg text-zinc-600"
+              className="grid h-9 w-9 place-items-center rounded-lg text-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
             >
-              <Search className="h-[17px] w-[17px]" />
+              <Search className="h-[17px] w-[17px]" aria-hidden="true" />
             </button>
             <nav
               className="flex items-center gap-1"
@@ -189,12 +210,12 @@ export function AppShell({ children, matchCount }: AppShellProps) {
                   to={to}
                   aria-label={label}
                   className={({ isActive }) =>
-                    `grid h-9 w-9 place-items-center rounded-lg ${
+                    `grid h-9 w-9 place-items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70 ${
                       isActive ? 'bg-white/[0.07] text-radar' : 'text-zinc-600'
                     }`
                   }
                 >
-                  <Icon className="h-[17px] w-[17px]" />
+                  <Icon className="h-[17px] w-[17px]" aria-hidden="true" />
                 </NavLink>
               ))}
             </nav>

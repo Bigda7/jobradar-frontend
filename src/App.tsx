@@ -6,6 +6,11 @@ const JobsPage = lazy(() =>
     default: module.JobsPage,
   })),
 );
+const LegalPage = lazy(() =>
+  import('./features/legal/legal-page').then((module) => ({
+    default: module.LegalPage,
+  })),
+);
 const MatchesPage = lazy(() =>
   import('./features/matches/matches-page').then((module) => ({
     default: module.MatchesPage,
@@ -26,7 +31,11 @@ export function App() {
   return (
     <Suspense
       fallback={
-        <div className="grid min-h-screen place-items-center bg-canvas text-sm text-zinc-600">
+        <div
+          role="status"
+          aria-live="polite"
+          className="grid min-h-screen place-items-center bg-canvas text-sm text-zinc-600"
+        >
           Loading workspace
         </div>
       }
@@ -36,6 +45,7 @@ export function App() {
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/sources" element={<SourcesPage />} />
         <Route path="/tracker" element={<TrackerPage />} />
+        <Route path="/legal" element={<LegalPage />} />
         <Route path="/" element={<Navigate to="/matches" replace />} />
         <Route path="*" element={<Navigate to="/matches" replace />} />
       </Routes>
