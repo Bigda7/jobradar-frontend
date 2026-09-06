@@ -33,6 +33,8 @@ export const allTrackerStatuses: TrackerStatus[] = [
 export const trackerSnapshotSchema = z.object({
   title: z.string().max(10_000),
   company: z.string().max(10_000).nullable(),
+  sourceName: z.string().max(10_000).optional(),
+  sourceDisplayName: z.string().max(10_000).optional(),
   kind: opportunityKindSchema,
   workMode: workModeSchema,
   salaryMin: z.string().max(100).nullable(),

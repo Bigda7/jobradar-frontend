@@ -80,6 +80,10 @@ describe('tracker store', () => {
       opportunityId: 42,
       status: 'saved',
       notes: '',
+      snapshot: {
+        sourceName: 'example',
+        sourceDisplayName: 'Example Jobs',
+      },
     });
     expect(storage.getItem(trackerStorageKey)).toContain('Frontend Developer');
   });

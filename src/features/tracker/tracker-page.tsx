@@ -9,11 +9,12 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { Archive, Columns3, Radar } from 'lucide-react';
+import { ArrowUpDown, ListFilter, Radar } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { AppShell } from '../../components/app-shell';
+import { PremiumSelect } from '../../components/ui/premium-select';
 import { TrackerCard, TrackerDragOverlayCard } from './tracker-card';
 import { TrackerColumn } from './tracker-column';
 import {
@@ -26,17 +27,27 @@ import {
 import { TrackerDetails } from './tracker-details';
 import { trackerStatusMeta } from './tracker-config';
 import {
+  allTrackerStatuses,
   pipelineStatuses,
   type TrackerRecord,
-  type TrackerStatus,
 } from './tracker-schema';
 import {
   getActiveTrackerCount,
   trackerStore,
   useTrackerState,
 } from './tracker-store';
+import {
+  sortTrackerRecords,
+  type TrackerSort,
+  type TrackerView,
+} from './tracker-view';
 
-type TrackerView = 'pipeline' | 'archived';
+const trackerSortOptions = [
+  { value: 'recent_activity', label: 'Recent activity' },
+  { value: 'oldest_activity', label: 'Oldest activity' },
+  { value: 'vacancy_newest', label: 'Vacancy: newest' },
+  { value: 'vacancy_oldest', label: 'Vacancy: oldest' },
+];
 
 function getRecordIdFromSortableId(id: string): number | null {
   const prefix = 'tracker-record-';
@@ -51,12 +62,8 @@ function getRecordIdFromSortableId(id: string): number | null {
 
 export function TrackerPage() {
   const trackerState = useTrackerState();
-  const [view, setView] = useState<TrackerView>('pipeline');
-  const initialMobileStatus =
-    pipelineStatuses.find((status) => trackerState.order[status].length > 0) ??
-    'saved';
-  const [mobileStatus, setMobileStatus] =
-    useState<TrackerStatus>(initialMobileStatus);
+  const [view, setView] = useState<TrackerView>('all');
+  const [sort, setSort] = useState<TrackerSort>('recent_activity');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [activeDragId, setActiveDragId] = useState<number | null>(null);
   const sensors = useSensors(
@@ -67,6 +74,23 @@ export function TrackerPage() {
   const archivedRecords = trackerState.order.archived
     .map((id) => trackerState.records[id])
     .filter((record): record is TrackerRecord => Boolean(record));
+  const totalCount = activeCount + archivedRecords.length;
+  const filteredRecords =
+    view === 'all'
+      ? []
+      : sortTrackerRecords(
+          trackerState.order[view]
+            .map((id) => trackerState.records[id])
+            .filter((record): record is TrackerRecord => Boolean(record)),
+          sort,
+        );
+  const viewOptions = [
+    { value: 'all', label: 'All' },
+    ...allTrackerStatuses.map((status) => ({
+      value: status,
+      label: `${trackerStatusMeta[status].label} (${trackerState.order[status].length})`,
+    })),
+  ];
   const selectedRecord =
     selectedId === null
       ? null
@@ -136,33 +160,25 @@ export function TrackerPage() {
                 </div>
               </div>
 
-              <div className="flex rounded-xl border border-white/[0.07] bg-white/[0.025] p-1">
-                <button
-                  type="button"
-                  onClick={() => setView('pipeline')}
-                  aria-pressed={view === 'pipeline'}
-                  className={`flex h-8 items-center gap-2 rounded-lg px-3 text-xs ${
-                    view === 'pipeline'
-                      ? 'bg-white/[0.08] text-radar'
-                      : 'text-zinc-600 hover:text-zinc-300'
-                  }`}
-                >
-                  <Columns3 className="h-3.5 w-3.5" />
-                  Pipeline
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setView('archived')}
-                  aria-pressed={view === 'archived'}
-                  className={`flex h-8 items-center gap-2 rounded-lg px-3 text-xs ${
-                    view === 'archived'
-                      ? 'bg-white/[0.08] text-radar'
-                      : 'text-zinc-600 hover:text-zinc-300'
-                  }`}
-                >
-                  <Archive className="h-3.5 w-3.5" />
-                  Archived
-                </button>
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                <PremiumSelect
+                  value={view}
+                  onValueChange={(value) => setView(value as TrackerView)}
+                  options={viewOptions}
+                  label="Tracker status filter"
+                  leadingIcon={<ListFilter className="h-3.5 w-3.5 text-zinc-500" />}
+                  triggerClassName="w-full sm:w-44"
+                />
+                {view !== 'all' ? (
+                  <PremiumSelect
+                    value={sort}
+                    onValueChange={(value) => setSort(value as TrackerSort)}
+                    options={trackerSortOptions}
+                    label="Sort tracker cards"
+                    leadingIcon={<ArrowUpDown className="h-3.5 w-3.5 text-zinc-500" />}
+                    triggerClassName="w-full sm:w-44"
+                  />
+                ) : null}
               </div>
             </div>
             <p className="mt-3 text-[11px] text-zinc-700">
@@ -176,7 +192,7 @@ export function TrackerPage() {
           </header>
 
           <div className="premium-scrollbar min-h-0 flex-1 overflow-y-auto">
-            {activeCount === 0 && archivedRecords.length === 0 ? (
+            {totalCount === 0 ? (
               <div className="grid min-h-[460px] place-items-center p-6 text-center">
                 <div className="max-w-sm">
                   <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-radar/15 bg-radar/[0.06] text-radar">
@@ -196,7 +212,7 @@ export function TrackerPage() {
                   </Link>
                 </div>
               </div>
-            ) : view === 'pipeline' ? (
+            ) : view === 'all' && activeCount > 0 ? (
               <DndContext
                 sensors={sensors}
                 collisionDetection={trackerCollisionDetection}
@@ -204,40 +220,6 @@ export function TrackerPage() {
                 onDragCancel={() => setActiveDragId(null)}
                 onDragEnd={handleDragEnd}
               >
-                <div className="px-4 pt-4 md:hidden">
-                  <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-700">
-                    Pipeline stage
-                  </p>
-                  <div className="grid grid-cols-2 gap-2" aria-label="Pipeline stage">
-                    {pipelineStatuses.map((status) => {
-                      const meta = trackerStatusMeta[status];
-                      const selected = mobileStatus === status;
-
-                      return (
-                        <button
-                          key={status}
-                          type="button"
-                          onClick={() => setMobileStatus(status)}
-                          aria-pressed={selected}
-                          className={`flex h-10 items-center justify-between rounded-xl border px-3 text-xs transition-colors ${
-                            selected
-                              ? 'border-radar/35 bg-radar/[0.08] text-radar'
-                              : 'border-white/[0.07] bg-white/[0.02] text-zinc-500'
-                          }`}
-                        >
-                          <span className="flex items-center gap-2">
-                            <span className={`h-2 w-2 rounded-full ${meta.markerClassName}`} />
-                            {meta.label}
-                          </span>
-                          <span className={selected ? 'text-radar/70' : 'text-zinc-700'}>
-                            {trackerState.order[status].length}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
                 <div className="grid gap-4 p-4 md:grid-cols-2 md:p-6 xl:h-full xl:grid-cols-4">
                   {pipelineStatuses.map((status) => {
                     const records = trackerState.order[status]
@@ -250,7 +232,6 @@ export function TrackerPage() {
                         status={status}
                         records={records}
                         onSelect={(record) => setSelectedId(record.opportunityId)}
-                        className={status === mobileStatus ? '' : 'hidden md:flex'}
                       />
                     );
                   })}
@@ -261,22 +242,22 @@ export function TrackerPage() {
                   ) : null}
                 </DragOverlay>
               </DndContext>
-            ) : archivedRecords.length > 0 ? (
-              <DndContext>
-                <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6 2xl:grid-cols-3">
-                  {archivedRecords.map((record) => (
-                    <TrackerCard
-                      key={getTrackerSortableId(record.opportunityId)}
-                      record={record}
-                      sortable={false}
-                      onSelect={(item) => setSelectedId(item.opportunityId)}
-                    />
-                  ))}
-                </div>
-              </DndContext>
+            ) : view !== 'all' && filteredRecords.length > 0 ? (
+              <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6 2xl:grid-cols-3">
+                {filteredRecords.map((record) => (
+                  <TrackerCard
+                    key={getTrackerSortableId(record.opportunityId)}
+                    record={record}
+                    sortable={false}
+                    onSelect={(item) => setSelectedId(item.opportunityId)}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="grid min-h-[420px] place-items-center p-6 text-center text-sm text-zinc-600">
-                No archived opportunities.
+                {view === 'all'
+                  ? 'No active opportunities.'
+                  : `No ${trackerStatusMeta[view].label.toLowerCase()} opportunities.`}
               </div>
             )}
           </div>

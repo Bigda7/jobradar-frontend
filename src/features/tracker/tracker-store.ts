@@ -58,6 +58,8 @@ function createSnapshot(opportunity: Opportunity): TrackerSnapshot {
   return {
     title: opportunity.title,
     company: opportunity.company,
+    sourceName: opportunity.source_name,
+    sourceDisplayName: opportunity.source_display_name,
     kind: opportunity.kind,
     workMode: opportunity.work_mode,
     salaryMin: opportunity.salary_min,

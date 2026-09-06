@@ -5,7 +5,10 @@ import { useDrawerAccessibility } from '../../hooks/use-drawer-accessibility';
 import { useDebouncedValue } from '../../hooks/use-debounced-value';
 import { isSafeExternalUrl } from '../../security/external-url';
 import { formatLabel, formatRelativeDate } from '../matches/formatters';
-import { formatTrackerSalary } from './tracker-formatters';
+import {
+  formatTrackerPlatform,
+  formatTrackerSalary,
+} from './tracker-formatters';
 import { TrackerRecordStatusSelect } from './tracker-record-status-select';
 import type { TrackerRecord } from './tracker-schema';
 import { trackerStore } from './tracker-store';
@@ -21,6 +24,7 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
   const latestNotesRef = useRef(notes);
   const persistedNotesRef = useRef(record.notes);
   const salary = formatTrackerSalary(record.snapshot);
+  const platform = formatTrackerPlatform(record.snapshot);
   const isSaving = notes !== record.notes;
   const titleId = useId();
   const notesId = useId();
@@ -91,11 +95,16 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
 
       <div className="premium-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-zinc-600">
-          {record.snapshot.company ?? 'Company not specified'}
+          {platform}
         </p>
         <h2 id={titleId} className="mt-3 break-words text-2xl font-semibold leading-8 tracking-[-0.035em] text-white">
           {record.snapshot.title}
         </h2>
+        {record.snapshot.company ? (
+          <p className="mt-2 break-words text-sm text-zinc-500">
+            {record.snapshot.company}
+          </p>
+        ) : null}
 
         <div className="mt-5">
           <TrackerRecordStatusSelect record={record} />

@@ -6,7 +6,10 @@ import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from 'react';
 import { formatLabel, formatRelativeDate } from '../matches/formatters';
 import type { TrackerRecord } from './tracker-schema';
 import { trackerStatusMeta } from './tracker-config';
-import { formatTrackerSalary } from './tracker-formatters';
+import {
+  formatTrackerPlatform,
+  formatTrackerSalary,
+} from './tracker-formatters';
 import { TrackerRecordStatusSelect } from './tracker-record-status-select';
 import { getTrackerSortableId } from './tracker-dnd';
 
@@ -36,6 +39,7 @@ function TrackerCardContent({
   overlay = false,
 }: TrackerCardContentProps) {
   const salary = formatTrackerSalary(record.snapshot);
+  const platform = formatTrackerPlatform(record.snapshot);
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (
       onSelect &&
@@ -70,11 +74,16 @@ function TrackerCardContent({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 text-left">
           <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.09em] text-zinc-600">
-            {record.snapshot.company ?? 'Company not specified'}
+            {platform}
           </span>
           <h3 className="mt-2 line-clamp-2 break-words text-sm font-semibold leading-5 text-zinc-100">
             {record.snapshot.title}
           </h3>
+          {record.snapshot.company ? (
+            <p className="mt-1 truncate text-xs text-zinc-500">
+              {record.snapshot.company}
+            </p>
+          ) : null}
         </div>
         {dragHandle}
       </div>
