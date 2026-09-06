@@ -8,6 +8,7 @@ import {
   RadioTower,
   Radar,
   Search,
+  ShieldCheck,
   X,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -31,6 +32,7 @@ const navigationItems = [
   { label: 'All jobs', route: '/jobs', icon: BriefcaseBusiness },
   { label: 'Tracker', route: '/tracker', icon: ClipboardList },
   { label: 'Sources', route: '/sources', icon: RadioTower },
+  { label: 'Privacy & legal', route: '/legal', icon: ShieldCheck },
 ];
 
 export function CommandPalette({
@@ -106,7 +108,10 @@ export function CommandPalette({
           <Dialog.Title className="sr-only">JobRadar command palette</Dialog.Title>
           <Command shouldFilter={false} className="bg-transparent text-zinc-100">
             <div className="flex h-14 items-center gap-3 border-b border-white/[0.07] px-4">
-              <Search className="h-4 w-4 shrink-0 text-zinc-600" />
+              <Search
+                className="h-4 w-4 shrink-0 text-zinc-600"
+                aria-hidden="true"
+              />
               <Command.Input
                 value={search}
                 onValueChange={setSearch}
@@ -137,7 +142,7 @@ export function CommandPalette({
                       onSelect={() => selectRoute(route)}
                       className="mt-1 flex cursor-default items-center gap-3 rounded-xl px-3 py-3 text-sm font-normal normal-case tracking-normal text-zinc-400 outline-none data-[selected=true]:bg-white/[0.07] data-[selected=true]:text-white"
                     >
-                      <Icon className="h-4 w-4 text-zinc-600" />
+                      <Icon className="h-4 w-4 text-zinc-600" aria-hidden="true" />
                       {label}
                     </Command.Item>
                   ))}

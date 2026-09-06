@@ -84,10 +84,11 @@ export function JobCard({ job }: JobCardProps) {
             href={sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-auto inline-flex items-center gap-1.5 text-zinc-400 transition-colors hover:text-radar"
+            aria-label={`Open ${job.title} on ${job.source_display_name} in a new tab`}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md text-zinc-400 transition-colors hover:text-radar focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
           >
             Open source
-            <ExternalLink className="h-3.5 w-3.5" />
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
           </a>
         ) : null}
       </footer>

@@ -12,17 +12,17 @@ The interface combines ranked matches, a searchable job catalog, source monitori
 
 ## Portfolio Highlights
 
-- Built and deployed a responsive React 19 SPA with four production routes and explicit loading, empty, partial-failure, and error states.
+- Built and deployed a responsive React 19 SPA with five production routes and explicit loading, empty, partial-failure, and error states.
 - Designed a backend-for-frontend layer with allowlisted Vercel Functions so the browser never receives the upstream API bearer token.
 - Validates remote API responses and local persisted state with Zod before data reaches the UI.
 - Implements a local application CRM with drag-and-drop, accessible status controls, notes, archive, schema migration, corruption recovery, and cross-tab synchronization.
 - Ships through GitHub Actions with locked dependencies, tests, type checking, linting, production builds, dependency auditing, and secret scanning.
-- Runs behind Vercel security headers and edge rate limiting, with independent monitoring for the frontend, backend, and full proxy path.
+- Runs behind Vercel security headers, with independent monitoring for the frontend, backend, and full proxy path.
 
 ## Architectural Evolution: Personal Client to SaaS v2
 
 - **v1.0 (Current Live Production):** High-density single-tenant dashboard with ranked feed, full-text job search, source health monitoring, and a local drag-and-drop Kanban pipeline with Zod runtime validation.
-- **v2.0 (In Active Private Staging):** Multi-tenant SaaS client introducing user sessions, authentication flows, per-user search profiles and scoring criteria, server-persisted Kanban sync, and dedicated account management and notification configuration views.
+- **v2.0 (In Private Development):** Multi-tenant SaaS client planned around user sessions, authentication flows, per-user search profiles and scoring criteria, server-persisted Kanban sync, and dedicated account management and notification configuration views.
 
 ## Production Architecture
 
@@ -41,8 +41,8 @@ The browser communicates only with same-origin `/api` endpoints. Vercel Function
 
 ## Features
 
-- **Matches feed** — Browse deterministically scored opportunities grouped into Top (`85–100`), Strong (`70–84`), Good (`55–69`), and Below Target tiers. Switch between board and compact list views, sort the loaded page, and inspect reasons, concerns, descriptions, and verified vacancy links in a details drawer.
-- **Job catalog** — Search the complete catalog with a debounced query, work mode, employment type, minimum salary, and pagination controls.
+- **Matches feed** — Browse deterministically scored opportunities grouped into Top (`85–100`), Strong (`70–84`), Good (`55–69`), and Below Target tiers. Switch between board and compact list views, sort the loaded page, and inspect reasons, concerns, descriptions, and source vacancy links in a details drawer.
+- **Job catalog** — Search the stored catalog with a debounced query, work mode, employment type, minimum salary, and pagination controls.
 - **Source monitoring** — Review each configured source, its enabled state, last run, last successful run, and the latest reported error without synthetic health labels.
 - **Application tracker** — Manage a local Kanban pipeline: `Saved -> Applied -> Interview -> Offer`, with a separate archive, drag-and-drop movement, accessible status controls, job snapshots, autosaved notes, and cross-tab synchronization.
 - **Command palette** — Use `Cmd+K` on macOS or `Ctrl+/` on Windows and Linux to navigate between sections, search loaded matches, and query remote jobs.
@@ -184,7 +184,7 @@ Run `npm audit` regularly and review every dependency update before merging it.
    for every URL, including the production domain. The server-side proxy prevents token disclosure
    but does not authenticate individual visitors by itself.
 7. Deploy and verify `/api/health`, `/api/ready`, `/api/jobs`, `/api/matches`, plus direct
-   navigation to `/matches`, `/jobs`, `/tracker`, and `/sources`.
+   navigation to `/matches`, `/jobs`, `/tracker`, `/sources`, and `/legal`.
 8. Protect the production domain, require the CI workflow on `main`, and review the generated
    deployment before promoting it.
 

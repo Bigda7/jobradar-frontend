@@ -210,7 +210,11 @@ export function MatchesPage() {
 
   return (
     <AppShell matchCount={total}>
-      <main className="flex min-h-[calc(100vh-64px)] min-w-0 bg-canvas lg:h-screen lg:min-h-0">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex min-h-[calc(100vh-64px)] min-w-0 bg-canvas outline-none lg:h-screen lg:min-h-0"
+      >
         <section className="flex min-w-0 flex-1 flex-col">
           <header className="shrink-0 border-b border-white/[0.06] bg-panel">
             <div className="flex min-h-[76px] flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-7">

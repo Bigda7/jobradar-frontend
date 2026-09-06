@@ -107,7 +107,11 @@ export function JobsPage() {
 
   return (
     <AppShell>
-      <main className="flex min-h-[calc(100vh-64px)] min-w-0 flex-col bg-canvas lg:h-screen lg:min-h-0">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex min-h-[calc(100vh-64px)] min-w-0 flex-col bg-canvas outline-none lg:h-screen lg:min-h-0"
+      >
         <header className="shrink-0 border-b border-white/[0.06] bg-panel px-4 py-5 sm:px-6 lg:px-7">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
