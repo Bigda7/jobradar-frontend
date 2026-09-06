@@ -9,6 +9,36 @@ function formatDecimal(value: string): string {
   return Number.isFinite(parsed) ? numberFormatter.format(parsed) : value;
 }
 
+function formatSourceName(value: string): string {
+  const normalized = value.replace(/^www\./, '');
+
+  if (normalized.includes('.')) {
+    return normalized;
+  }
+
+  return normalized
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+export function formatTrackerPlatform(snapshot: TrackerSnapshot): string {
+  const explicitName = snapshot.sourceDisplayName?.trim() || snapshot.sourceName?.trim();
+
+  if (explicitName) {
+    return explicitName;
+  }
+
+  if (snapshot.sourceUrl) {
+    try {
+      return formatSourceName(new URL(snapshot.sourceUrl).hostname);
+    } catch {
+      return 'Source not specified';
+    }
+  }
+
+  return 'Source not specified';
+}
+
 export function formatTrackerSalary(
   snapshot: TrackerSnapshot,
 ): string | null {
