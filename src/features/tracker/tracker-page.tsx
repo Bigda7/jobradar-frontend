@@ -9,7 +9,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { ArrowUpDown, ListFilter, Radar } from 'lucide-react';
+import { Archive, ArrowUpDown, Columns3, ListFilter, Radar } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -30,6 +30,7 @@ import {
   allTrackerStatuses,
   pipelineStatuses,
   type TrackerRecord,
+  type TrackerStatus,
 } from './tracker-schema';
 import {
   getActiveTrackerCount,
@@ -39,15 +40,16 @@ import {
 import {
   sortTrackerRecords,
   type TrackerSort,
-  type TrackerView,
 } from './tracker-view';
 
-const trackerSortOptions = [
-  { value: 'recent_activity', label: 'Recent activity' },
-  { value: 'oldest_activity', label: 'Oldest activity' },
+const archiveSortOptions = [
+  { value: 'recent_activity', label: 'Recently archived' },
+  { value: 'oldest_activity', label: 'Oldest archived' },
   { value: 'vacancy_newest', label: 'Vacancy: newest' },
   { value: 'vacancy_oldest', label: 'Vacancy: oldest' },
 ];
+
+type TrackerMode = 'pipeline' | 'archive';
 
 function getRecordIdFromSortableId(id: string): number | null {
   const prefix = 'tracker-record-';
@@ -62,7 +64,13 @@ function getRecordIdFromSortableId(id: string): number | null {
 
 export function TrackerPage() {
   const trackerState = useTrackerState();
-  const [view, setView] = useState<TrackerView>('all');
+  const initialMobileStage =
+    pipelineStatuses.find((status) =>
+      trackerState.order[status].some((id) => Boolean(trackerState.records[id])),
+    ) ?? 'saved';
+  const [mode, setMode] = useState<TrackerMode>('pipeline');
+  const [mobileStage, setMobileStage] =
+    useState<TrackerStatus>(initialMobileStage);
   const [sort, setSort] = useState<TrackerSort>('recent_activity');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [activeDragId, setActiveDragId] = useState<number | null>(null);
@@ -71,26 +79,21 @@ export function TrackerPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const activeCount = getActiveTrackerCount(trackerState);
-  const archivedRecords = trackerState.order.archived
-    .map((id) => trackerState.records[id])
-    .filter((record): record is TrackerRecord => Boolean(record));
+  const recordsByStatus = Object.fromEntries(
+    allTrackerStatuses.map((status) => [
+      status,
+      trackerState.order[status]
+        .map((id) => trackerState.records[id])
+        .filter((record): record is TrackerRecord => Boolean(record)),
+    ]),
+  ) as Record<TrackerStatus, TrackerRecord[]>;
+  const archivedRecords = recordsByStatus.archived;
+  const sortedArchivedRecords = sortTrackerRecords(archivedRecords, sort);
   const totalCount = activeCount + archivedRecords.length;
-  const filteredRecords =
-    view === 'all'
-      ? []
-      : sortTrackerRecords(
-          trackerState.order[view]
-            .map((id) => trackerState.records[id])
-            .filter((record): record is TrackerRecord => Boolean(record)),
-          sort,
-        );
-  const viewOptions = [
-    { value: 'all', label: 'All' },
-    ...allTrackerStatuses.map((status) => ({
-      value: status,
-      label: `${trackerStatusMeta[status].label} (${trackerState.order[status].length})`,
-    })),
-  ];
+  const stageOptions = pipelineStatuses.map((status) => ({
+    value: status,
+    label: `${trackerStatusMeta[status].label} (${recordsByStatus[status].length})`,
+  }));
   const selectedRecord =
     selectedId === null
       ? null
@@ -161,24 +164,56 @@ export function TrackerPage() {
               </div>
 
               <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-                <PremiumSelect
-                  value={view}
-                  onValueChange={(value) => setView(value as TrackerView)}
-                  options={viewOptions}
-                  label="Tracker status filter"
-                  leadingIcon={<ListFilter className="h-3.5 w-3.5 text-zinc-500" />}
-                  triggerClassName="w-full sm:w-44"
-                />
-                {view !== 'all' ? (
+                <div
+                  className="grid w-full grid-cols-2 rounded-xl border border-white/[0.07] bg-white/[0.02] p-1 sm:w-auto"
+                  aria-label="Tracker view"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setMode('pipeline')}
+                    aria-pressed={mode === 'pipeline'}
+                    className={`inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-xs font-medium transition-colors ${
+                      mode === 'pipeline'
+                        ? 'bg-white/[0.08] text-zinc-100 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    <Columns3 className="h-3.5 w-3.5" />
+                    Pipeline
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode('archive')}
+                    aria-pressed={mode === 'archive'}
+                    className={`inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-xs font-medium transition-colors ${
+                      mode === 'archive'
+                        ? 'bg-white/[0.08] text-zinc-100 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    <Archive className="h-3.5 w-3.5" />
+                    Archive ({archivedRecords.length})
+                  </button>
+                </div>
+                {mode === 'pipeline' ? (
+                  <PremiumSelect
+                    value={mobileStage}
+                    onValueChange={(value) => setMobileStage(value as TrackerStatus)}
+                    options={stageOptions}
+                    label="Pipeline stage"
+                    leadingIcon={<ListFilter className="h-3.5 w-3.5 text-zinc-500" />}
+                    triggerClassName="w-full md:hidden"
+                  />
+                ) : (
                   <PremiumSelect
                     value={sort}
                     onValueChange={(value) => setSort(value as TrackerSort)}
-                    options={trackerSortOptions}
-                    label="Sort tracker cards"
+                    options={archiveSortOptions}
+                    label="Sort archived opportunities"
                     leadingIcon={<ArrowUpDown className="h-3.5 w-3.5 text-zinc-500" />}
-                    triggerClassName="w-full sm:w-44"
+                    triggerClassName="w-full sm:w-48"
                   />
-                ) : null}
+                )}
               </div>
             </div>
             <p className="mt-3 text-[11px] text-zinc-700">
@@ -212,7 +247,7 @@ export function TrackerPage() {
                   </Link>
                 </div>
               </div>
-            ) : view === 'all' && activeCount > 0 ? (
+            ) : mode === 'pipeline' && activeCount > 0 ? (
               <DndContext
                 sensors={sensors}
                 collisionDetection={trackerCollisionDetection}
@@ -222,9 +257,7 @@ export function TrackerPage() {
               >
                 <div className="grid gap-4 p-4 md:grid-cols-2 md:p-6 xl:h-full xl:grid-cols-4">
                   {pipelineStatuses.map((status) => {
-                    const records = trackerState.order[status]
-                      .map((id) => trackerState.records[id])
-                      .filter((record): record is TrackerRecord => Boolean(record));
+                    const records = recordsByStatus[status];
 
                     return (
                       <TrackerColumn
@@ -232,6 +265,7 @@ export function TrackerPage() {
                         status={status}
                         records={records}
                         onSelect={(record) => setSelectedId(record.opportunityId)}
+                        className={status === mobileStage ? '' : 'hidden md:flex'}
                       />
                     );
                   })}
@@ -242,9 +276,9 @@ export function TrackerPage() {
                   ) : null}
                 </DragOverlay>
               </DndContext>
-            ) : view !== 'all' && filteredRecords.length > 0 ? (
+            ) : mode === 'archive' && sortedArchivedRecords.length > 0 ? (
               <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6 2xl:grid-cols-3">
-                {filteredRecords.map((record) => (
+                {sortedArchivedRecords.map((record) => (
                   <TrackerCard
                     key={getTrackerSortableId(record.opportunityId)}
                     record={record}
@@ -255,9 +289,9 @@ export function TrackerPage() {
               </div>
             ) : (
               <div className="grid min-h-[420px] place-items-center p-6 text-center text-sm text-zinc-600">
-                {view === 'all'
-                  ? 'No active opportunities.'
-                  : `No ${trackerStatusMeta[view].label.toLowerCase()} opportunities.`}
+                {mode === 'pipeline'
+                  ? 'No opportunities in the active pipeline.'
+                  : 'No archived opportunities.'}
               </div>
             )}
           </div>
