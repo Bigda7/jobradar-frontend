@@ -53,8 +53,30 @@ function formatLastResult(source: SourceResponse): string | null {
   return parts.join(' · ');
 }
 
+function formatCoverageNote(source: SourceResponse): string | null {
+  const notes: string[] = [];
+
+  if (source.last_limit_reached) {
+    notes.push('Result limit reached; older vacancies may not be included.');
+  }
+  if ((source.last_detail_failure_count ?? 0) > 0) {
+    notes.push(
+      `${source.last_detail_failure_count} ${source.last_detail_failure_count === 1 ? 'vacancy has' : 'vacancies have'} limited details.`,
+    );
+  }
+  if (source.last_coverage_warning === 'all_candidates_filtered') {
+    notes.push('All discovered candidates were filtered out.');
+  }
+  if (source.last_coverage_warning === 'empty_result') {
+    notes.push('The latest run returned no vacancies.');
+  }
+
+  return notes.length > 0 ? notes.join(' ') : null;
+}
+
 export function SourceCard({ source }: SourceCardProps) {
   const lastResult = formatLastResult(source);
+  const coverageNote = formatCoverageNote(source);
 
   return (
     <article className="flex min-h-72 flex-col rounded-2xl border border-white/[0.07] bg-card p-5">
@@ -137,6 +159,16 @@ export function SourceCard({ source }: SourceCardProps) {
             </div>
             <p className="mt-2 line-clamp-3 break-words text-xs leading-5 text-amber-100/65">
               {source.last_error}
+            </p>
+          </div>
+        ) : coverageNote ? (
+          <div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.055] p-3">
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-300">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Coverage note
+            </div>
+            <p className="mt-2 text-xs leading-5 text-amber-100/65">
+              {coverageNote}
             </p>
           </div>
         ) : (

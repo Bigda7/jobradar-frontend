@@ -93,11 +93,20 @@ export const sourceResponseSchema = z.object({
   last_error: longExternalTextSchema.nullable(),
   last_run_status: shortExternalTextSchema.nullable().default(null),
   last_discovered_count: z.number().int().nonnegative().nullable().default(null),
+  last_candidate_count: z.number().int().nonnegative().nullable().default(null),
+  last_filtered_count: z.number().int().nonnegative().nullable().default(null),
+  last_detail_failure_count: z.number().int().nonnegative().nullable().default(null),
+  last_page_count: z.number().int().nonnegative().nullable().default(null),
+  last_limit_reached: z.boolean().nullable().default(null),
   last_created_count: z.number().int().nonnegative().nullable().default(null),
   last_updated_count: z.number().int().nonnegative().nullable().default(null),
   last_unchanged_count: z.number().int().nonnegative().nullable().default(null),
+  last_duplicate_count: z.number().int().nonnegative().nullable().default(null),
   last_deactivated_count: z.number().int().nonnegative().nullable().default(null),
+  last_normalization_error_count: z.number().int().nonnegative().nullable().default(null),
+  last_warning_count: z.number().int().nonnegative().nullable().default(null),
   last_error_count: z.number().int().nonnegative().nullable().default(null),
+  last_coverage_warning: shortExternalTextSchema.nullable().default(null),
 });
 
 export const sourceListResponseSchema = z.array(sourceResponseSchema).max(200);

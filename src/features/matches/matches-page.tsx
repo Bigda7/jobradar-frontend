@@ -73,6 +73,7 @@ export function MatchesPage() {
   const selectedSource = searchParams.get('source') ?? allSourcesValue;
   const filters: MatchFilters = {
     min_score: minimumScore,
+    sort,
     limit: pageSize,
     offset,
     ...(selectedSource !== allSourcesValue
@@ -94,7 +95,8 @@ export function MatchesPage() {
         | undefined;
 
       return previousFilters?.source === filters.source &&
-        previousFilters?.min_score === filters.min_score
+        previousFilters?.min_score === filters.min_score &&
+        previousFilters?.sort === filters.sort
         ? previousData
         : undefined;
     },
@@ -189,6 +191,12 @@ export function MatchesPage() {
     clearSelection();
   };
 
+  const selectSort = (value: MatchSort) => {
+    setSort(value);
+    setOffset(0);
+    clearSelection();
+  };
+
   const openMatch = (match: MatchResponse) => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set('opportunity', String(match.id));
@@ -253,9 +261,9 @@ export function MatchesPage() {
                 />
                 <PremiumSelect
                   value={sort}
-                  onValueChange={(value) => setSort(value as MatchSort)}
+                  onValueChange={(value) => selectSort(value as MatchSort)}
                   options={sortOptions}
-                  label="Sort loaded results"
+                  label="Sort all results"
                   leadingIcon={<ArrowDownUp className="h-3.5 w-3.5" />}
                   triggerClassName="w-full min-w-0 px-2 text-[11px] sm:w-auto sm:min-w-44 sm:px-3 sm:text-xs"
                 />
@@ -343,7 +351,7 @@ export function MatchesPage() {
             <div className="flex min-h-9 flex-wrap items-center justify-between gap-2 border-t border-white/[0.04] px-4 py-1.5 text-[10px] sm:px-6 lg:px-7">
               <div className="flex flex-wrap items-center gap-3 text-zinc-700">
                 <span>
-                  Sorting and match groups apply to the jobs shown on this page.
+                  Sorting applies to all matching jobs. Match groups apply to this page.
                 </span>
                 {total !== undefined && total > 0 ? (
                   <span className="font-medium text-zinc-500">

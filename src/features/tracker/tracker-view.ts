@@ -1,11 +1,27 @@
 import type { TrackerRecord, TrackerStatus } from './tracker-schema';
 
 export type TrackerView = 'all' | TrackerStatus;
+export type TrackerListFilter = 'all' | 'active' | 'archived';
 export type TrackerSort =
   | 'recent_activity'
   | 'oldest_activity'
   | 'vacancy_newest'
   | 'vacancy_oldest';
+
+export function filterTrackerRecords(
+  records: TrackerRecord[],
+  filter: TrackerListFilter,
+): TrackerRecord[] {
+  if (filter === 'all') {
+    return records;
+  }
+
+  return records.filter((record) =>
+    filter === 'archived'
+      ? record.status === 'archived'
+      : record.status !== 'archived',
+  );
+}
 
 function timestamp(value: string | null): number | null {
   if (!value) {

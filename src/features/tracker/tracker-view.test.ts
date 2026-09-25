@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import type { TrackerRecord } from './tracker-schema';
-import { sortTrackerRecords } from './tracker-view';
+import { filterTrackerRecords, sortTrackerRecords } from './tracker-view';
 
 function createRecord(
   opportunityId: number,
   updatedAt: string,
   publishedAt: string | null,
+  status: TrackerRecord['status'] = 'saved',
 ): TrackerRecord {
   return {
     opportunityId,
-    status: 'saved',
+    status,
     notes: '',
     snapshot: {
       title: `Opportunity ${opportunityId}`,
@@ -67,5 +68,27 @@ describe('tracker record sorting', () => {
     sortTrackerRecords(records, 'recent_activity');
 
     expect(records).toEqual(original);
+  });
+
+  it('filters all, active, and archived records explicitly', () => {
+    const archived = createRecord(
+      4,
+      '2026-08-23T10:00:00Z',
+      '2026-08-26T10:00:00Z',
+      'archived',
+    );
+    const mixed = [...records, archived];
+
+    expect(filterTrackerRecords(mixed, 'all')).toEqual(mixed);
+    expect(
+      filterTrackerRecords(mixed, 'active').map(
+        (record) => record.opportunityId,
+      ),
+    ).toEqual([1, 2, 3]);
+    expect(
+      filterTrackerRecords(mixed, 'archived').map(
+        (record) => record.opportunityId,
+      ),
+    ).toEqual([4]);
   });
 });

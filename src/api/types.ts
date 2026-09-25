@@ -43,6 +43,7 @@ export interface JobsFilters {
 export interface MatchFilters {
   min_score?: number;
   source?: string;
+  sort?: 'score' | 'newest' | 'company';
   limit?: number;
   offset?: number;
 }
