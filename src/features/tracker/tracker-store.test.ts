@@ -199,8 +199,34 @@ describe('tracker store', () => {
     const store = createTrackerStore({ storage });
 
     expect(store.getState().records).toEqual({});
+    expect(store.getPersistenceError()).toContain('could not be saved');
     expect(() => store.saveOpportunity(createJob())).not.toThrow();
     expect(store.getState().records['42']).toBeDefined();
+    expect(store.getPersistenceError()).toContain('could not be saved');
+  });
+
+  it('clears a previous persistence error after a successful write', () => {
+    const values = new Map<string, string>();
+    let shouldFail = true;
+    const storage: TrackerStorage = {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => {
+        if (shouldFail) {
+          throw new Error('Storage is temporarily blocked');
+        }
+        values.set(key, value);
+      },
+    };
+    const store = createTrackerStore({ storage });
+
+    store.saveOpportunity(createJob());
+    expect(store.getPersistenceError()).toContain('could not be saved');
+
+    shouldFail = false;
+    store.setNotes(42, 'Follow up tomorrow');
+
+    expect(store.getPersistenceError()).toBeNull();
+    expect(storage.getItem(trackerStorageKey)).toContain('Follow up tomorrow');
   });
 
   it('removes an unsafe stored URL while preserving the tracker record', () => {
