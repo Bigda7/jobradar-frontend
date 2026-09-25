@@ -29,6 +29,7 @@ type Listener = () => void;
 
 export interface TrackerStore {
   getState: () => TrackerState;
+  getPersistenceError: () => string | null;
   subscribe: (listener: Listener) => () => void;
   saveOpportunity: (opportunity: Opportunity) => TrackerRecord;
   setStatus: (opportunityId: number, status: TrackerStatus) => boolean;
@@ -41,6 +42,9 @@ export interface TrackerStore {
   removeOpportunity: (opportunityId: number) => boolean;
   applySerializedState: (serialized: string | null) => void;
 }
+
+const trackerPersistenceError =
+  'Tracker changes could not be saved in this browser. They may be lost after reload.';
 
 function getBrowserStorage(): TrackerStorage | null {
   if (typeof window === 'undefined') {
@@ -86,12 +90,17 @@ export function createTrackerStore(
   const storageKey = options.storageKey ?? trackerStorageKey;
   const now = options.now ?? (() => new Date().toISOString());
   let state = createEmptyTrackerState();
+  let persistenceError =
+    storage === null && typeof window !== 'undefined'
+      ? trackerPersistenceError
+      : null;
 
   if (storage) {
     try {
       state = parseTrackerState(storage.getItem(storageKey));
     } catch {
       state = createEmptyTrackerState();
+      persistenceError = trackerPersistenceError;
     }
   }
   const listeners = new Set<Listener>();
@@ -109,9 +118,12 @@ export function createTrackerStore(
     if (persist && storage) {
       try {
         storage.setItem(storageKey, JSON.stringify(validated));
+        persistenceError = null;
       } catch {
-        state = validated;
+        persistenceError = trackerPersistenceError;
       }
+    } else if (persist && typeof window !== 'undefined') {
+      persistenceError = trackerPersistenceError;
     }
 
     notify();
@@ -119,6 +131,7 @@ export function createTrackerStore(
 
   return {
     getState: () => state,
+    getPersistenceError: () => persistenceError,
     subscribe: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
@@ -266,6 +279,14 @@ export function useTrackerState(): TrackerState {
     trackerStore.subscribe,
     trackerStore.getState,
     trackerStore.getState,
+  );
+}
+
+export function useTrackerPersistenceError(): string | null {
+  return useSyncExternalStore(
+    trackerStore.subscribe,
+    trackerStore.getPersistenceError,
+    trackerStore.getPersistenceError,
   );
 }
 

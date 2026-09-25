@@ -9,7 +9,14 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { ArrowUpDown, Columns3, List, ListFilter, Radar } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowUpDown,
+  Columns3,
+  List,
+  ListFilter,
+  Radar,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -35,6 +42,7 @@ import {
 import {
   getActiveTrackerCount,
   trackerStore,
+  useTrackerPersistenceError,
   useTrackerState,
 } from './tracker-store';
 import {
@@ -72,6 +80,7 @@ function getRecordIdFromSortableId(id: string): number | null {
 
 export function TrackerPage() {
   const trackerState = useTrackerState();
+  const persistenceError = useTrackerPersistenceError();
   const initialMobileStage =
     pipelineStatuses.find((status) =>
       trackerState.order[status].some((id) => Boolean(trackerState.records[id])),
@@ -251,6 +260,15 @@ export function TrackerPage() {
                 Stored only in this browser. Drag cards or use the status menu.
               </span>
             </p>
+            {persistenceError ? (
+              <div
+                role="alert"
+                className="mt-3 flex items-start gap-2 rounded-xl border border-amber-300/15 bg-amber-300/[0.055] px-3 py-2.5 text-xs leading-5 text-amber-100/70"
+              >
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" />
+                <span>{persistenceError}</span>
+              </div>
+            ) : null}
           </header>
 
           <div className="premium-scrollbar min-h-0 flex-1 overflow-y-auto">
