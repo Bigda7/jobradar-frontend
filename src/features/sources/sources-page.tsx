@@ -17,6 +17,9 @@ export function SourcesPage() {
   const registeredSources = sourcesQuery.data ?? [];
   const sources = registeredSources.filter((source) => source.enabled);
   const errorCount = sources.filter((source) => source.last_error).length;
+  const coverageNoteCount = sources.filter(
+    (source) => source.last_coverage_warning,
+  ).length;
 
   return (
     <AppShell>
@@ -39,7 +42,8 @@ export function SourcesPage() {
                 </h1>
                 {sourcesQuery.data ? (
                   <span className="text-xs text-zinc-600">
-                    {sources.length} active · {errorCount} with reported errors
+                    {sources.length} active · {errorCount} errors ·{' '}
+                    {coverageNoteCount} coverage notes
                   </span>
                 ) : null}
               </div>
