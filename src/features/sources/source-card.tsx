@@ -155,7 +155,7 @@ export function SourceCard({ source }: SourceCardProps) {
           <div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.055] p-3">
             <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-300">
               <AlertTriangle className="h-3.5 w-3.5" />
-              Last reported error
+              Last reported issue
             </div>
             <p className="mt-2 line-clamp-3 break-words text-xs leading-5 text-amber-100/65">
               {source.last_error}

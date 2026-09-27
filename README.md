@@ -4,6 +4,8 @@ Production React client for JobRadar, a self-hosted job intelligence platform th
 
 The interface combines ranked matches, a searchable job catalog, source monitoring, and a device-local Kanban tracker. It uses strict runtime validation at API and storage boundaries, route-level code splitting, accessible UI primitives, and a security-focused deployment configuration.
 
+The deployed application is intentionally public as a portfolio demonstration. Visitors can view the job catalog, match scores and reasons, and source health metrics. The tracker belongs to each visitor's current browser and is not shared with the backend. Detailed source errors and backend credentials are not part of the public API response.
+
 | Resource | Link |
 | --- | --- |
 | Live application | [Open JobRadar](https://jobradar-frontend-pink.vercel.app) |
@@ -37,8 +39,8 @@ The browser communicates only with same-origin `/api` endpoints. Vercel Function
 ## Features
 
 - **Matches feed** — Browse deterministically scored opportunities grouped into Top (`85–100`), Strong (`70–84`), Good (`55–69`), and Below Target tiers. Switch between board and compact list views, sort the loaded page, and inspect reasons, concerns, descriptions, and source vacancy links in a details drawer.
-- **Job catalog** — Search the stored catalog with a debounced query, work mode, employment type, minimum salary, and pagination controls.
-- **Source monitoring** — Review each configured source, its enabled state, last run, last successful run, and the latest reported error without synthetic health labels.
+- **Job catalog** — Search the stored catalog with a debounced query, work mode, employment type, monthly salary in a selected currency, and pagination controls.
+- **Source monitoring** — Review each configured source, its enabled state, last run, last successful run, and issue status without exposing internal diagnostics.
 - **Application tracker** — Manage a local Kanban pipeline: `Saved -> Applied -> Interview -> Offer`, with a separate archive, drag-and-drop movement, accessible status controls, job snapshots, autosaved notes, and cross-tab synchronization.
 - **Command palette** — Use `Cmd+K` on macOS or `Ctrl+/` on Windows and Linux to navigate between sections, search loaded matches, and query remote jobs.
 - **Responsive dark interface** — Includes keyboard-accessible dialogs and drawers, focus management, reduced-motion support, and layouts tested down to a 320 px viewport.
@@ -131,7 +133,7 @@ For reproducible CI installations, use `npm ci` with the committed lockfile.
 The frontend keeps endpoint contracts intentionally separate:
 
 - `/matches` accepts only `min_score`, `limit`, and `offset` and exposes `source_url`.
-- `/jobs` accepts `q`, `work_mode`, `employment_type`, `min_salary`, `limit`, and `offset` and exposes `source_url`.
+- `/jobs` accepts `q`, `work_mode`, `employment_type`, `min_salary`, `salary_currency`, `limit`, and `offset` and exposes `source_url`. Salary filtering uses monthly amounts in the selected currency.
 - `/sources` displays factual source fields returned by the API.
 - `/ready` powers the API readiness indicator.
 
@@ -139,14 +141,14 @@ All successful responses are validated with Zod before they reach the UI. Networ
 
 ## Local Tracker Data
 
-Tracker records are stored under the versioned key `jobradar.tracker.v1` in `localStorage`.
+Tracker records remain in browser `localStorage`. Existing `jobradar.tracker.v1` data is read as a legacy baseline; new changes are stored under per-record keys so edits to different records or fields do not overwrite each other across tabs.
 
 - Stored values are parsed and validated before use.
 - Corrupted records are isolated where possible instead of resetting the entire tracker.
 - Unsafe external URL schemes are removed.
 - Notes are limited to 5,000 characters.
 - Storage access failures degrade to in-memory session behavior instead of crashing the application.
-- Updates are synchronized across tabs through the browser `storage` event.
+- Updates are synchronized across tabs through the browser `storage` event. When the same field is edited in two tabs, the last saved value wins. Deletions are retained as tombstones so stale tabs cannot restore removed records.
 
 Tracker data is device-local, unencrypted, and not backed up. Do not store passwords, access tokens, financial information, medical information, or other sensitive data in personal notes.
 
@@ -175,12 +177,12 @@ Run `npm audit` regularly and review every dependency update before merging it.
 
 5. Keep the token out of all `VITE_*` variables and confirm it is scoped to Preview and Production
    as intended.
-6. If the application is private, enable [Vercel Deployment Protection](https://vercel.com/docs/deployment-protection)
-   for every URL, including the production domain. The server-side proxy prevents token disclosure
-   but does not authenticate individual visitors by itself.
+6. Keep the portfolio application publicly accessible by design. The server-side proxy prevents
+   token disclosure but does not authenticate individual visitors; every proxied read-only response
+   must be suitable for public viewing.
 7. Deploy and verify `/api/health`, `/api/ready`, `/api/jobs`, `/api/matches`, plus direct
    navigation to `/matches`, `/jobs`, `/tracker`, `/sources`, and `/legal`.
-8. Protect the production domain, require the CI workflow on `main`, and review the generated
+8. Keep the production domain on HTTPS, require the CI workflow on `main`, and review the generated
    deployment before promoting it.
 
 The explicit `/api/*.ts` functions take precedence over the SPA rewrite. The proxy accepts GET
