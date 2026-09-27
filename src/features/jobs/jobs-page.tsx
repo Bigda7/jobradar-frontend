@@ -43,6 +43,12 @@ const employmentTypes = [
   { label: 'Volunteer', value: 'volunteer' },
   { label: 'Other', value: 'other' },
 ];
+const salaryCurrencies = [
+  { label: 'USD', value: 'USD' },
+  { label: 'EUR', value: 'EUR' },
+  { label: 'UAH', value: 'UAH' },
+  { label: 'CZK', value: 'CZK' },
+];
 
 export function JobsPage() {
   const [searchParams] = useSearchParams();
@@ -52,6 +58,7 @@ export function JobsPage() {
     allEmploymentTypesValue,
   );
   const [minimumSalary, setMinimumSalary] = useState('');
+  const [salaryCurrency, setSalaryCurrency] = useState('USD');
   const [offset, setOffset] = useState(0);
   const debouncedSearch = useDebouncedValue(search, debounceDelay);
   const debouncedMinimumSalary = useDebouncedValue(
@@ -67,6 +74,7 @@ export function JobsPage() {
         employmentType:
           employmentType === allEmploymentTypesValue ? '' : employmentType,
         minimumSalary: debouncedMinimumSalary,
+        salaryCurrency,
         limit: pageSize,
         offset,
       }),
@@ -75,6 +83,7 @@ export function JobsPage() {
       debouncedMinimumSalary,
       debouncedSearch,
       offset,
+      salaryCurrency,
       workMode,
     ],
   );
@@ -102,6 +111,7 @@ export function JobsPage() {
     setWorkMode('remote');
     setEmploymentType(allEmploymentTypesValue);
     setMinimumSalary('');
+    setSalaryCurrency('USD');
     setOffset(0);
   };
 
@@ -177,27 +187,40 @@ export function JobsPage() {
               triggerClassName="h-11 w-full text-sm"
             />
 
-            <label>
-              <span className="sr-only">Minimum salary</span>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                value={minimumSalary}
-                onChange={(event) => {
-                  setMinimumSalary(event.target.value);
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_90px] gap-2">
+              <label className="min-w-0">
+                <span className="sr-only">Minimum monthly salary</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={minimumSalary}
+                  onChange={(event) => {
+                    setMinimumSalary(event.target.value);
+                    setOffset(0);
+                  }}
+                  placeholder="Min"
+                  className="h-11 w-full rounded-xl border border-white/[0.07] bg-white/[0.035] px-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-700 focus:border-radar/40 focus:ring-2 focus:ring-radar/10"
+                />
+              </label>
+              <PremiumSelect
+                value={salaryCurrency}
+                onValueChange={(value) => {
+                  setSalaryCurrency(value);
                   setOffset(0);
                 }}
-                placeholder="Min salary"
-                className="h-11 w-full rounded-xl border border-white/[0.07] bg-white/[0.035] px-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-700 focus:border-radar/40 focus:ring-2 focus:ring-radar/10"
+                options={salaryCurrencies}
+                label="Salary currency"
+                triggerClassName="h-11 w-full text-sm"
               />
-            </label>
+            </div>
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px]">
             <span className="text-zinc-700">
               Remote jobs are shown by default. Choose another work mode to
-              broaden your search.
+              broaden your search. Salary uses monthly amounts in the selected
+              currency.
             </span>
             <span
               className={

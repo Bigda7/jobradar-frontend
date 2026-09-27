@@ -27,6 +27,7 @@ import {
 } from '../tracker/tracker-store';
 import { MatchCard } from './match-card';
 import { MatchDetails } from './match-details';
+import { readMatchPageOptions } from './match-navigation';
 import {
   filterMatchesByTier,
   getLoadedMatchMetrics,
@@ -62,13 +63,9 @@ const emptyMatches: MatchResponse[] = [];
 const allSourcesValue = 'all';
 
 export function MatchesPage() {
-  const [minimumScore, setMinimumScore] = useState(55);
-  const [offset, setOffset] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
-  const [tierFocus, setTierFocus] = useState<MatchTierFocus>('all');
-  const [sort, setSort] = useState<MatchSort>('score');
-  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { minimumScore, offset, sort, tierFocus } = readMatchPageOptions(searchParams);
   const trackerState = useTrackerState();
   const selectedSource = searchParams.get('source') ?? allSourcesValue;
   const filters: MatchFilters = {
@@ -109,12 +106,10 @@ export function MatchesPage() {
     requestedOpportunity && /^\d+$/.test(requestedOpportunity)
       ? Number(requestedOpportunity)
       : null;
-  const effectiveSelectedId =
-    selectedId ?? requestedId;
   const selectedMatch =
-    effectiveSelectedId === null
+    requestedId === null
       ? null
-      : items.find((item) => item.id === effectiveSelectedId) ?? null;
+      : items.find((item) => item.id === requestedId) ?? null;
   const focusedItems = useMemo(
     () => sortLoadedMatches(filterMatchesByTier(items, tierFocus), sort),
     [items, sort, tierFocus],
@@ -149,71 +144,86 @@ export function MatchesPage() {
       : Math.floor((total - 1) / pageSize) * pageSize;
   const isOffsetOutOfRange = total !== undefined && offset > lastOffset;
 
+  const updateParams = useCallback(
+    (update: (params: URLSearchParams) => void) => {
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current);
+        update(next);
+        return next;
+      }, { replace: true });
+    },
+    [setSearchParams],
+  );
+
   const clearSelection = useCallback(() => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete('opportunity');
-    setSearchParams(nextParams, { replace: true });
-    setSelectedId(null);
-  }, [searchParams, setSearchParams]);
+    updateParams((params) => params.delete('opportunity'));
+  }, [updateParams]);
 
   const selectMinimumScore = (value: number) => {
-    setMinimumScore(value);
-    setOffset(0);
-    setTierFocus('all');
-    clearSelection();
+    updateParams((params) => {
+      params.set('min_score', String(value));
+      params.delete('offset');
+      params.delete('opportunity');
+      params.delete('tier');
+    });
   };
 
   const selectSource = (value: string) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete('opportunity');
-
-    if (value === allSourcesValue) {
-      nextParams.delete('source');
-    } else {
-      nextParams.set('source', value);
-    }
-
-    setSearchParams(nextParams, { replace: true });
-    setOffset(0);
-    setTierFocus('all');
-    setSelectedId(null);
+    updateParams((params) => {
+      params.delete('opportunity');
+      params.delete('offset');
+      params.delete('tier');
+      if (value === allSourcesValue) {
+        params.delete('source');
+      } else {
+        params.set('source', value);
+      }
+    });
   };
 
   const selectTier = (tier: MatchTierFocus) => {
     const requiredMinimum = tier === 'top' ? 85 : tier === 'strong' ? 70 : 55;
 
-    if (tier !== 'all' && minimumScore > requiredMinimum) {
-      setMinimumScore(requiredMinimum);
-      setOffset(0);
-    }
-
-    setTierFocus(tier);
-    clearSelection();
+    updateParams((params) => {
+      params.delete('opportunity');
+      if (tier === 'all') {
+        params.delete('tier');
+      } else {
+        params.set('tier', tier);
+      }
+      if (tier !== 'all' && minimumScore > requiredMinimum) {
+        params.set('min_score', String(requiredMinimum));
+        params.delete('offset');
+      }
+    });
   };
 
   const selectSort = (value: MatchSort) => {
-    setSort(value);
-    setOffset(0);
-    clearSelection();
+    updateParams((params) => {
+      params.set('sort', value);
+      params.delete('offset');
+      params.delete('opportunity');
+    });
   };
 
   const openMatch = (match: MatchResponse) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('opportunity', String(match.id));
-    setSearchParams(nextParams, { replace: true });
-    setSelectedId(match.id);
+    updateParams((params) => params.set('opportunity', String(match.id)));
   };
 
   const closeMatch = clearSelection;
 
   const openPreviousPage = () => {
-    setOffset(Math.max(0, offset - pageSize));
-    clearSelection();
+    updateParams((params) => {
+      params.set('offset', String(Math.max(0, offset - pageSize)));
+      params.delete('opportunity');
+    });
   };
 
   const openNextPage = () => {
-    setOffset(offset + pageSize);
-    clearSelection();
+    updateParams((params) => {
+      params.set('offset', String(offset + pageSize));
+      params.delete('opportunity');
+    });
   };
 
   return (
@@ -433,8 +443,10 @@ export function MatchesPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        setOffset(lastOffset);
-                        clearSelection();
+                        updateParams((params) => {
+                          params.set('offset', String(lastOffset));
+                          params.delete('opportunity');
+                        });
                       }}
                       className="mt-5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-sm text-zinc-200 hover:bg-white/[0.07]"
                     >

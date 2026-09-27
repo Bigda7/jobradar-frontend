@@ -19,6 +19,14 @@ afterEach(() => {
 class MemoryStorage implements TrackerStorage {
   private readonly values = new Map<string, string>();
 
+  get length(): number {
+    return this.values.size;
+  }
+
+  key(index: number): string | null {
+    return [...this.values.keys()][index] ?? null;
+  }
+
   getItem(key: string): string | null {
     return this.values.get(key) ?? null;
   }
@@ -85,7 +93,9 @@ describe('tracker store', () => {
         sourceDisplayName: 'Example Jobs',
       },
     });
-    expect(storage.getItem(trackerStorageKey)).toContain('Frontend Developer');
+    expect(createTrackerStore({ storage }).getState().records['42'].snapshot.title).toBe(
+      'Frontend Developer',
+    );
   });
 
   it('refreshes the snapshot without resetting progress or notes', () => {
@@ -151,15 +161,138 @@ describe('tracker store', () => {
     expect(migrated.order.offer).toEqual(['42']);
   });
 
-  it('applies validated serialized state from another tab', () => {
-    const firstStore = createTrackerStore({ storage: new MemoryStorage() });
-    const secondStore = createTrackerStore({ storage: new MemoryStorage() });
+  it('refreshes validated data from another tab', () => {
+    const storage = new MemoryStorage();
+    const firstStore = createTrackerStore({ storage });
+    const secondStore = createTrackerStore({ storage });
     firstStore.saveOpportunity(createJob());
     firstStore.setStatus(42, 'applied');
 
-    secondStore.applySerializedState(JSON.stringify(firstStore.getState()));
+    secondStore.refreshFromStorage();
 
     expect(secondStore.getState().records['42'].status).toBe('applied');
+  });
+
+  it('keeps independent saves made by stale tabs', () => {
+    const storage = new MemoryStorage();
+    const firstStore = createTrackerStore({ storage });
+    const secondStore = createTrackerStore({ storage });
+
+    firstStore.saveOpportunity(createJob({ id: 1 }));
+    secondStore.saveOpportunity(createJob({ id: 2 }));
+
+    const reloadedStore = createTrackerStore({ storage });
+    expect(Object.keys(reloadedStore.getState().records).sort()).toEqual([
+      '1',
+      '2',
+    ]);
+  });
+
+  it('keeps independent fields changed by stale tabs', () => {
+    const storage = new MemoryStorage();
+    const firstStore = createTrackerStore({ storage });
+    firstStore.saveOpportunity(createJob());
+    const secondStore = createTrackerStore({ storage });
+
+    firstStore.setStatus(42, 'interview');
+    secondStore.setNotes(42, 'Call recruiter');
+
+    const record = createTrackerStore({ storage }).getState().records['42'];
+    expect(record.status).toBe('interview');
+    expect(record.notes).toBe('Call recruiter');
+  });
+
+  it('uses the last saved value when tabs edit the same field', () => {
+    const storage = new MemoryStorage();
+    const firstStore = createTrackerStore({ storage });
+    firstStore.saveOpportunity(createJob());
+    const secondStore = createTrackerStore({ storage });
+
+    firstStore.setNotes(42, 'First note');
+    secondStore.setNotes(42, 'Second note');
+
+    expect(createTrackerStore({ storage }).getState().records['42'].notes).toBe(
+      'Second note',
+    );
+  });
+
+  it('preserves separate status changes from stale tabs', () => {
+    const storage = new MemoryStorage();
+    const firstStore = createTrackerStore({ storage });
+    firstStore.saveOpportunity(createJob({ id: 1 }));
+    firstStore.saveOpportunity(createJob({ id: 2 }));
+    const secondStore = createTrackerStore({ storage });
+
+    firstStore.setStatus(1, 'interview');
+    secondStore.setStatus(2, 'applied');
+
+    const reloaded = createTrackerStore({ storage }).getState();
+    expect(reloaded.order.interview).toEqual(['1']);
+    expect(reloaded.order.applied).toEqual(['2']);
+  });
+
+  it('does not restore a deleted record from a stale tab', () => {
+    const storage = new MemoryStorage();
+    const firstStore = createTrackerStore({ storage });
+    firstStore.saveOpportunity(createJob());
+    const secondStore = createTrackerStore({ storage });
+
+    firstStore.removeOpportunity(42);
+    expect(secondStore.setNotes(42, 'Stale edit')).toBe(false);
+    expect(createTrackerStore({ storage }).getState().records['42']).toBeUndefined();
+  });
+
+  it('keeps a deletion over the legacy snapshot after reload', () => {
+    const storage = new MemoryStorage();
+    const original = createTrackerStore({ storage: new MemoryStorage() });
+    original.saveOpportunity(createJob());
+    storage.setItem(trackerStorageKey, JSON.stringify(original.getState()));
+    const store = createTrackerStore({ storage });
+
+    store.removeOpportunity(42);
+
+    expect(createTrackerStore({ storage }).getState().records['42']).toBeUndefined();
+    expect(storage.getItem(trackerStorageKey)).toContain('Frontend Developer');
+  });
+
+  it('can explicitly save a record again after deletion', () => {
+    const storage = new MemoryStorage();
+    const store = createTrackerStore({ storage });
+    store.saveOpportunity(createJob());
+    store.setNotes(42, 'Old note');
+    store.removeOpportunity(42);
+
+    store.saveOpportunity(createJob());
+
+    const record = createTrackerStore({ storage }).getState().records['42'];
+    expect(record.status).toBe('saved');
+    expect(record.notes).toBe('');
+  });
+
+  it('reloads the latest storage rather than a delayed serialized event', () => {
+    const storage = new MemoryStorage();
+    const firstStore = createTrackerStore({ storage });
+    const secondStore = createTrackerStore({ storage });
+    firstStore.saveOpportunity(createJob({ id: 1 }));
+    const delayedState = JSON.stringify(firstStore.getState());
+    secondStore.saveOpportunity(createJob({ id: 2 }));
+    const addEventListener = vi.fn();
+    vi.stubGlobal('window', {
+      localStorage: storage,
+      addEventListener,
+      removeEventListener: vi.fn(),
+    });
+    const stop = startTrackerStorageSync(secondStore);
+    const handler = addEventListener.mock.calls[0][1] as (event: StorageEvent) => void;
+
+    handler({
+      key: trackerStorageKey,
+      newValue: delayedState,
+      storageArea: storage,
+    } as unknown as StorageEvent);
+    stop();
+
+    expect(Object.keys(secondStore.getState().records).sort()).toEqual(['1', '2']);
   });
 
   it('removes an opportunity completely from records and ordering', () => {
@@ -188,9 +321,11 @@ describe('tracker store', () => {
 
   it('does not crash when storage access throws', () => {
     const storage: TrackerStorage = {
+      length: 0,
       getItem: () => {
         throw new Error('Storage is blocked');
       },
+      key: () => null,
       setItem: () => {
         throw new Error('Storage is blocked');
       },
@@ -209,7 +344,11 @@ describe('tracker store', () => {
     const values = new Map<string, string>();
     let shouldFail = true;
     const storage: TrackerStorage = {
+      get length() {
+        return values.size;
+      },
       getItem: (key) => values.get(key) ?? null,
+      key: (index) => [...values.keys()][index] ?? null,
       setItem: (key, value) => {
         if (shouldFail) {
           throw new Error('Storage is temporarily blocked');
@@ -226,22 +365,20 @@ describe('tracker store', () => {
     store.setNotes(42, 'Follow up tomorrow');
 
     expect(store.getPersistenceError()).toBeNull();
-    expect(storage.getItem(trackerStorageKey)).toContain('Follow up tomorrow');
+    expect(createTrackerStore({ storage }).getState().records['42'].notes).toBe(
+      'Follow up tomorrow',
+    );
   });
 
   it('removes an unsafe stored URL while preserving the tracker record', () => {
-    const storage = new MemoryStorage();
     const sourceStore = createTrackerStore({
-      storage,
+      storage: new MemoryStorage(),
       now: () => '2026-08-25T12:00:00Z',
     });
     sourceStore.saveOpportunity(createMatch());
-    const serialized = JSON.parse(
-      storage.getItem(trackerStorageKey)!,
-    ) as {
-      records: Record<string, TrackerRecord>;
-    };
+    const serialized = structuredClone(sourceStore.getState());
     serialized.records['42'].snapshot.sourceUrl = 'javascript:alert(1)';
+    const storage = new MemoryStorage();
     storage.setItem(trackerStorageKey, JSON.stringify(serialized));
 
     const recoveredStore = createTrackerStore({ storage });
@@ -251,19 +388,15 @@ describe('tracker store', () => {
   });
 
   it('salvages valid records when another stored record is invalid', () => {
-    const storage = new MemoryStorage();
     const sourceStore = createTrackerStore({
-      storage,
+      storage: new MemoryStorage(),
       now: () => '2026-08-25T12:00:00Z',
     });
     sourceStore.saveOpportunity(createJob({ id: 1 }));
     sourceStore.saveOpportunity(createJob({ id: 2 }));
-    const serialized = JSON.parse(
-      storage.getItem(trackerStorageKey)!,
-    ) as {
-      records: Record<string, TrackerRecord>;
-    };
+    const serialized = structuredClone(sourceStore.getState());
     serialized.records['2'].notes = 'x'.repeat(5_001);
+    const storage = new MemoryStorage();
     storage.setItem(trackerStorageKey, JSON.stringify(serialized));
 
     const recoveredStore = createTrackerStore({ storage });

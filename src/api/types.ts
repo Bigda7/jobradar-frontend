@@ -36,6 +36,7 @@ export interface JobsFilters {
   work_mode?: WorkMode;
   employment_type?: string;
   min_salary?: number;
+  salary_currency?: string;
   limit?: number;
   offset?: number;
 }
