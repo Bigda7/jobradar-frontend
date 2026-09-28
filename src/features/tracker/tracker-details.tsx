@@ -35,14 +35,21 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
     : null;
 
   useEffect(() => {
-    if (debouncedNotes !== record.notes) {
+    if (latestNotesRef.current === persistedNotesRef.current) {
+      latestNotesRef.current = record.notes;
+      setNotes(record.notes);
+    }
+    persistedNotesRef.current = record.notes;
+  }, [record.notes]);
+
+  useEffect(() => {
+    if (
+      debouncedNotes !== record.notes &&
+      latestNotesRef.current !== persistedNotesRef.current
+    ) {
       trackerStore.setNotes(record.opportunityId, debouncedNotes);
     }
   }, [debouncedNotes, record.notes, record.opportunityId]);
-
-  useEffect(() => {
-    persistedNotesRef.current = record.notes;
-  }, [record.notes]);
 
   useEffect(() => {
     const opportunityId = record.opportunityId;

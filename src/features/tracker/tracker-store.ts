@@ -2,9 +2,18 @@ import { useSyncExternalStore } from 'react';
 
 import type { JobResponse, MatchResponse } from '../../api';
 import {
+  basePatch,
+  isTrackerStorageKey,
+  lifecyclePatch,
+  loadTrackerData,
+  notesPatch,
+  placementPatch,
+  type TrackerPatch,
+  type TrackerStorage,
+} from './tracker-persistence';
+import {
   allTrackerStatuses,
   createEmptyTrackerState,
-  parseTrackerState,
   trackerStateSchema,
   trackerStorageKey,
   type TrackerRecord,
@@ -13,10 +22,7 @@ import {
   type TrackerStatus,
 } from './tracker-schema';
 
-export interface TrackerStorage {
-  getItem: (key: string) => string | null;
-  setItem: (key: string, value: string) => void;
-}
+export type { TrackerStorage } from './tracker-persistence';
 
 interface TrackerStoreOptions {
   storage?: TrackerStorage | null;
@@ -40,7 +46,7 @@ export interface TrackerStore {
   ) => boolean;
   setNotes: (opportunityId: number, notes: string) => boolean;
   removeOpportunity: (opportunityId: number) => boolean;
-  applySerializedState: (serialized: string | null) => void;
+  refreshFromStorage: () => void;
 }
 
 const trackerPersistenceError =
@@ -90,6 +96,7 @@ export function createTrackerStore(
   const storageKey = options.storageKey ?? trackerStorageKey;
   const now = options.now ?? (() => new Date().toISOString());
   let state = createEmptyTrackerState();
+  let ranks = new Map<string, number>();
   let persistenceError =
     storage === null && typeof window !== 'undefined'
       ? trackerPersistenceError
@@ -97,13 +104,16 @@ export function createTrackerStore(
 
   if (storage) {
     try {
-      state = parseTrackerState(storage.getItem(storageKey));
+      const loaded = loadTrackerData(storage, storageKey);
+      state = loaded.state;
+      ranks = loaded.ranks;
     } catch {
       state = createEmptyTrackerState();
       persistenceError = trackerPersistenceError;
     }
   }
   const listeners = new Set<Listener>();
+  const pendingPatches = new Map<string, string>();
 
   const notify = () => {
     for (const listener of listeners) {
@@ -111,18 +121,48 @@ export function createTrackerStore(
     }
   };
 
-  const commit = (nextState: TrackerState, persist = true) => {
+  const refreshFromStorage = () => {
+    if (!storage || pendingPatches.size > 0) {
+      return;
+    }
+
+    try {
+      const loaded = loadTrackerData(storage, storageKey);
+      if (JSON.stringify(loaded.state) !== JSON.stringify(state)) {
+        state = loaded.state;
+        notify();
+      }
+      ranks = loaded.ranks;
+    } catch {
+      persistenceError = trackerPersistenceError;
+      notify();
+    }
+  };
+
+  const rankAtEnd = (status: TrackerStatus) =>
+    Math.max(0, ...state.order[status].map((id) => ranks.get(id) ?? 0)) + 1_024;
+
+  const commit = (nextState: TrackerState, patches: TrackerPatch[]) => {
     const validated = trackerStateSchema.parse(nextState);
     state = validated;
 
-    if (persist && storage) {
+    if (storage) {
+      for (const patch of patches) {
+        pendingPatches.set(patch.key, patch.value);
+      }
       try {
-        storage.setItem(storageKey, JSON.stringify(validated));
+        for (const [key, value] of pendingPatches) {
+          storage.setItem(key, value);
+        }
+        pendingPatches.clear();
         persistenceError = null;
+        const loaded = loadTrackerData(storage, storageKey);
+        state = loaded.state;
+        ranks = loaded.ranks;
       } catch {
         persistenceError = trackerPersistenceError;
       }
-    } else if (persist && typeof window !== 'undefined') {
+    } else if (typeof window !== 'undefined') {
       persistenceError = trackerPersistenceError;
     }
 
@@ -137,6 +177,7 @@ export function createTrackerStore(
       return () => listeners.delete(listener);
     },
     saveOpportunity: (opportunity) => {
+      refreshFromStorage();
       const id = String(opportunity.id);
       const existing = state.records[id];
       const timestamp = now();
@@ -165,10 +206,21 @@ export function createTrackerStore(
         nextState.order.saved.push(id);
       }
 
-      commit(nextState);
+      const patches = [basePatch(id, record, storageKey)];
+      if (!existing) {
+        const rank = rankAtEnd('saved');
+        ranks.set(id, rank);
+        patches.push(
+          notesPatch(id, record.notes, timestamp, storageKey),
+          placementPatch(id, { status: 'saved', rank, updatedAt: timestamp }, storageKey),
+          lifecyclePatch(id, false, timestamp, storageKey),
+        );
+      }
+      commit(nextState, patches);
       return record;
     },
     setStatus: (opportunityId, status) => {
+      refreshFromStorage();
       const id = String(opportunityId);
       const existing = state.records[id];
 
@@ -184,10 +236,19 @@ export function createTrackerStore(
         status,
         updatedAt: now(),
       };
-      commit(nextState);
+      const rank = rankAtEnd(status);
+      ranks.set(id, rank);
+      commit(nextState, [
+        placementPatch(id, {
+          status,
+          rank,
+          updatedAt: nextState.records[id].updatedAt,
+        }, storageKey),
+      ]);
       return true;
     },
     move: (opportunityId, status, targetIndex) => {
+      refreshFromStorage();
       const id = String(opportunityId);
       const existing = state.records[id];
 
@@ -205,10 +266,48 @@ export function createTrackerStore(
         status,
         updatedAt: now(),
       };
-      commit(nextState);
+      const previousId = target[index - 1];
+      const nextId = target[index + 1];
+      const previousRank = previousId ? (ranks.get(previousId) ?? 0) : null;
+      const nextRank = nextId ? (ranks.get(nextId) ?? 0) : null;
+      const rank =
+        previousRank === null
+          ? nextRank === null
+            ? 1_024
+            : nextRank - 1_024
+          : nextRank === null
+            ? previousRank + 1_024
+            : (previousRank + nextRank) / 2;
+      let patches: TrackerPatch[];
+      if (
+        !Number.isFinite(rank) ||
+        rank === previousRank ||
+        rank === nextRank
+      ) {
+        patches = target.map((itemId, position) => {
+          const itemRank = (position + 1) * 1_024;
+          ranks.set(itemId, itemRank);
+          return placementPatch(itemId, {
+            status,
+            rank: itemRank,
+            updatedAt: nextState.records[itemId].updatedAt,
+          }, storageKey);
+        });
+      } else {
+        ranks.set(id, rank);
+        patches = [
+          placementPatch(id, {
+            status,
+            rank,
+            updatedAt: nextState.records[id].updatedAt,
+          }, storageKey),
+        ];
+      }
+      commit(nextState, patches);
       return true;
     },
     setNotes: (opportunityId, notes) => {
+      refreshFromStorage();
       const id = String(opportunityId);
       const existing = state.records[id];
 
@@ -222,10 +321,13 @@ export function createTrackerStore(
         notes: notes.slice(0, 5_000),
         updatedAt: now(),
       };
-      commit(nextState);
+      commit(nextState, [
+        notesPatch(id, nextState.records[id].notes, nextState.records[id].updatedAt, storageKey),
+      ]);
       return true;
     },
     removeOpportunity: (opportunityId) => {
+      refreshFromStorage();
       const id = String(opportunityId);
       const existing = state.records[id];
 
@@ -236,12 +338,11 @@ export function createTrackerStore(
       const nextState = structuredClone(state);
       delete nextState.records[id];
       removeFromOrder(nextState, id);
-      commit(nextState);
+      ranks.delete(id);
+      commit(nextState, [lifecyclePatch(id, true, now(), storageKey)]);
       return true;
     },
-    applySerializedState: (serialized) => {
-      commit(parseTrackerState(serialized), false);
-    },
+    refreshFromStorage,
   };
 }
 
@@ -255,7 +356,7 @@ export function startTrackerStorageSync(
   }
 
   const handleStorage = (event: StorageEvent) => {
-    if (event.key !== trackerStorageKey) {
+    if (!isTrackerStorageKey(event.key)) {
       return;
     }
 
@@ -267,7 +368,7 @@ export function startTrackerStorageSync(
       return;
     }
 
-    store.applySerializedState(event.newValue);
+    store.refreshFromStorage();
   };
 
   window.addEventListener('storage', handleStorage);

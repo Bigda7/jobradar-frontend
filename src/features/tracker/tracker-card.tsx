@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { CalendarDays, GripVertical, StickyNote } from 'lucide-react';
-import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from 'react';
+import type { CSSProperties, ReactNode, Ref } from 'react';
 
 import { formatLabel, formatRelativeDate } from '../matches/formatters';
 import type { TrackerRecord } from './tracker-schema';
@@ -40,26 +40,12 @@ function TrackerCardContent({
 }: TrackerCardContentProps) {
   const salary = formatTrackerSalary(record.snapshot);
   const platform = formatTrackerPlatform(record.snapshot);
-  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (
-      onSelect &&
-      event.target === event.currentTarget &&
-      (event.key === 'Enter' || event.key === ' ')
-    ) {
-      event.preventDefault();
-      onSelect(record);
-    }
-  };
 
   return (
     <article
       ref={nodeRef}
       style={style}
-      onClick={onSelect ? () => onSelect(record) : undefined}
-      onKeyDown={onSelect ? handleKeyDown : undefined}
-      tabIndex={onSelect ? 0 : undefined}
-      aria-label={onSelect ? `Open details for ${record.snapshot.title}` : undefined}
-      className={`rounded-xl border bg-card p-4 outline-none transition-colors ${
+      className={`relative rounded-xl border bg-card p-4 transition-colors ${
         overlay
           ? 'border-radar/45 shadow-2xl shadow-black/45'
           : 'shadow-sm shadow-black/10'
@@ -68,9 +54,17 @@ function TrackerCardContent({
           ? 'border-radar/25 opacity-20'
           : overlay
             ? ''
-            : 'cursor-pointer border-white/[0.07] hover:border-white/[0.12] hover:bg-card-hover focus-visible:border-radar/45 focus-visible:ring-2 focus-visible:ring-radar/10'
+            : 'cursor-pointer border-white/[0.07] hover:border-white/[0.12] hover:bg-card-hover focus-within:border-radar/45 focus-within:ring-2 focus-within:ring-radar/10'
       }`}
     >
+      {onSelect ? (
+        <button
+          type="button"
+          onClick={() => onSelect(record)}
+          aria-label={`Open details for ${record.snapshot.title}`}
+          className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none"
+        />
+      ) : null}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 text-left">
           <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.09em] text-zinc-600">
@@ -85,7 +79,7 @@ function TrackerCardContent({
             </p>
           ) : null}
         </div>
-        {dragHandle}
+        {dragHandle ? <div className="relative z-20">{dragHandle}</div> : null}
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
@@ -99,7 +93,7 @@ function TrackerCardContent({
         ) : null}
       </div>
 
-      <div className="mt-4">
+      <div className="relative z-20 mt-4">
         {overlay ? (
           <span className="inline-flex rounded-lg border border-white/[0.07] bg-white/[0.025] px-2.5 py-1.5 text-[10px] text-zinc-400">
             {trackerStatusMeta[record.status].label}

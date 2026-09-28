@@ -17,9 +17,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   getApiErrorMessage,
   getJobs,
+  type MatchFilters,
   type MatchListResponse,
   type MatchResponse,
 } from '../api';
+import { createMatchRoute } from '../features/matches/match-navigation';
 import { useDebouncedValue } from '../hooks/use-debounced-value';
 
 interface CommandPaletteProps {
@@ -48,18 +50,25 @@ export function CommandPalette({
   const cachedQueries = queryClient.getQueriesData<MatchListResponse>({
     queryKey: ['matches'],
   });
-  const deduplicatedMatches = new Map<number, MatchResponse>();
+  const deduplicatedMatches = new Map<
+    number,
+    { match: MatchResponse; filters: MatchFilters }
+  >();
 
-  for (const [, data] of cachedQueries) {
+  for (const [queryKey, data] of cachedQueries) {
+    const filters = queryKey[1] as MatchFilters | undefined;
+    if (!filters) {
+      continue;
+    }
     for (const match of data?.items ?? []) {
-      deduplicatedMatches.set(match.id, match);
+      deduplicatedMatches.set(match.id, { match, filters });
     }
   }
 
   const loadedMatches = [...deduplicatedMatches.values()];
 
   const matchingLoadedMatches = loadedMatches
-    .filter((match) => {
+    .filter(({ match }) => {
       if (!normalizedSearch) {
         return true;
       }
@@ -154,13 +163,11 @@ export function CommandPalette({
                   heading="Loaded matches"
                   className="px-1 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-700"
                 >
-                  {matchingLoadedMatches.map((match) => (
+                  {matchingLoadedMatches.map(({ match, filters }) => (
                     <Command.Item
                       key={match.id}
                       value={`match-${match.id}`}
-                      onSelect={() =>
-                        selectRoute(`/matches?opportunity=${match.id}`)
-                      }
+                      onSelect={() => selectRoute(createMatchRoute(match.id, filters))}
                       className="mt-1 flex cursor-default items-center gap-3 rounded-xl px-3 py-3 font-normal normal-case tracking-normal outline-none data-[selected=true]:bg-white/[0.07]"
                     >
                       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-radar-fill text-xs font-bold text-radar-fill-ink">

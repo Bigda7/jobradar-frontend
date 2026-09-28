@@ -5,6 +5,7 @@ interface JobFilterValues {
   workMode: WorkMode;
   employmentType: string;
   minimumSalary: string;
+  salaryCurrency: string;
   limit: number;
   offset: number;
 }
@@ -25,7 +26,7 @@ export function createJobsFilters(values: JobFilterValues): JobsFilters {
     ...(values.minimumSalary !== '' &&
     Number.isFinite(parsedSalary) &&
     parsedSalary >= 0
-      ? { min_salary: parsedSalary }
+      ? { min_salary: parsedSalary, salary_currency: values.salaryCurrency }
       : {}),
   };
 }

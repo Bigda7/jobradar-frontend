@@ -27,19 +27,7 @@ export function MatchCard({
 
   return (
     <article
-      onClick={() => onSelect(match)}
-      onKeyDown={(event) => {
-        if (
-          event.target === event.currentTarget &&
-          (event.key === 'Enter' || event.key === ' ')
-        ) {
-          event.preventDefault();
-          onSelect(match);
-        }
-      }}
-      tabIndex={0}
-      aria-label={`Open details for ${match.title}`}
-      className={`group w-full cursor-pointer text-left outline-none transition-all focus-visible:border-radar/45 focus-visible:ring-2 focus-visible:ring-radar/10 ${
+      className={`group relative w-full cursor-pointer text-left transition-all focus-within:border-radar/45 focus-within:ring-2 focus-within:ring-radar/10 ${
         compact
           ? 'grid gap-4 rounded-xl border px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center'
           : 'rounded-xl border p-4'
@@ -49,6 +37,12 @@ export function MatchCard({
           : 'border-white/[0.07] bg-card hover:-translate-y-0.5 hover:border-white/[0.12] hover:bg-card-hover'
       }`}
     >
+      <button
+        type="button"
+        onClick={() => onSelect(match)}
+        aria-label={`Open details for ${match.title}`}
+        className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none"
+      />
       <div className="min-w-0">
         <div className="flex items-start justify-between gap-3">
           <span className="truncate text-[11px] font-medium uppercase tracking-[0.08em] text-zinc-500">
@@ -60,13 +54,15 @@ export function MatchCard({
                 {match.score}%
               </span>
             ) : null}
-            <TrackerStatusControl opportunity={match} compact />
+            <div className="relative z-20">
+              <TrackerStatusControl opportunity={match} compact />
+            </div>
           </div>
         </div>
 
-        <h3 className="mt-2 line-clamp-2 break-words text-[15px] font-semibold leading-5 text-zinc-100">
+        <h2 className="mt-2 line-clamp-2 break-words text-[15px] font-semibold leading-5 text-zinc-100">
           {match.title}
-        </h3>
+        </h2>
 
         {match.company ? (
           <p className="mt-1 truncate text-xs text-zinc-500">{match.company}</p>
