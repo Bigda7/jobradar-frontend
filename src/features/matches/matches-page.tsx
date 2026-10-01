@@ -27,6 +27,7 @@ import {
 } from '../tracker/tracker-store';
 import { MatchCard } from './match-card';
 import { MatchDetails } from './match-details';
+import { MatchTierChip } from './match-tier-chip';
 import { readMatchPageOptions } from './match-navigation';
 import {
   filterMatchesByTier,
@@ -319,19 +320,13 @@ export function MatchesPage() {
                 </span>
                 <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
                   {tierChips.map((chip) => (
-                    <button
+                    <MatchTierChip
                       key={chip.value}
-                      type="button"
-                      onClick={() => selectTier(chip.value)}
-                      aria-pressed={tierFocus === chip.value}
-                      className={`w-full rounded-full px-3 py-1.5 text-[10px] font-medium transition-colors sm:w-auto ${
-                        tierFocus === chip.value
-                          ? 'bg-radar-selection text-radar-selection-ink'
-                          : 'border border-white/[0.07] bg-white/[0.025] text-zinc-500 hover:text-zinc-200'
-                      }`}
-                    >
-                      {chip.label}
-                    </button>
+                      tier={chip.value}
+                      label={chip.label}
+                      selected={tierFocus === chip.value}
+                      onSelect={selectTier}
+                    />
                   ))}
                 </div>
               </div>
