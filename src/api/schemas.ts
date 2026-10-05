@@ -97,6 +97,7 @@ export const sourceResponseSchema = z.object({
   last_candidate_count: z.number().int().nonnegative().nullable().default(null),
   last_filtered_count: z.number().int().nonnegative().nullable().default(null),
   last_detail_failure_count: z.number().int().nonnegative().nullable().default(null),
+  last_metadata_deferred_count: z.number().int().nonnegative().nullable().default(null),
   last_page_count: z.number().int().nonnegative().nullable().default(null),
   last_limit_reached: z.boolean().nullable().default(null),
   last_created_count: z.number().int().nonnegative().nullable().default(null),
