@@ -52,6 +52,7 @@ export const jobResponseSchema = z.object({
   salary_currency: z.string().max(32).nullable(),
   salary_period: z.string().max(64).nullable(),
   published_at: dateTimeSchema.nullable(),
+  source_updated_at: dateTimeSchema.nullable().optional(),
   first_seen_at: dateTimeSchema,
   last_seen_at: dateTimeSchema,
   source_url: safeExternalUrlSchema,

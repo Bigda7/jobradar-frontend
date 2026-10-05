@@ -3,12 +3,8 @@ import type { MatchResponse } from '../../api';
 export type MatchTierFocus = 'all' | 'top' | 'strong' | 'good';
 export type MatchSort = 'score' | 'newest' | 'company';
 
-function publishedTimestamp(item: MatchResponse): number {
-  if (!item.published_at) {
-    return Number.NEGATIVE_INFINITY;
-  }
-
-  const timestamp = Date.parse(item.published_at);
+function recencyTimestamp(item: MatchResponse): number {
+  const timestamp = Date.parse(item.source_updated_at ?? item.published_at ?? item.first_seen_at);
   return Number.isNaN(timestamp) ? Number.NEGATIVE_INFINITY : timestamp;
 }
 
@@ -16,7 +12,7 @@ function comparePublishedNewest(
   left: MatchResponse,
   right: MatchResponse,
 ): number {
-  return publishedTimestamp(right) - publishedTimestamp(left);
+  return recencyTimestamp(right) - recencyTimestamp(left);
 }
 
 export function filterMatchesByTier(

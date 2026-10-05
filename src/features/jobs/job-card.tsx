@@ -4,7 +4,7 @@ import type { JobResponse } from '../../api';
 import { isSafeExternalUrl } from '../../security/external-url';
 import {
   formatLabel,
-  formatRelativeDate,
+  formatJobDate,
   formatSalary,
 } from '../matches/formatters';
 import { TrackerStatusControl } from '../tracker/tracker-status-control';
@@ -71,7 +71,7 @@ export function JobCard({ job }: JobCardProps) {
       <footer className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.06] pt-4 text-[11px] text-zinc-600">
         <span className="flex items-center gap-1.5">
           <CalendarDays className="h-3.5 w-3.5" />
-          {formatRelativeDate(job.published_at, 'Publish date unavailable')}
+          {formatJobDate(job)}
         </span>
         {job.location_text ? (
           <span className="flex min-w-0 items-center gap-1.5">

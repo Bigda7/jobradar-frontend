@@ -74,6 +74,19 @@ export function formatRelativeDate(
   return 'just now';
 }
 
+export function formatJobDate(
+  job: Pick<JobResponse, 'published_at' | 'source_updated_at' | 'first_seen_at'>,
+  now = Date.now(),
+): string {
+  if (job.source_updated_at) {
+    return `Updated ${formatRelativeDate(job.source_updated_at, 'date unavailable', now)}`;
+  }
+  if (job.published_at) {
+    return `Published ${formatRelativeDate(job.published_at, 'date unavailable', now)}`;
+  }
+  return `Seen ${formatRelativeDate(job.first_seen_at, 'date unavailable', now)}`;
+}
+
 export function formatLabel(value: string): string {
   return value
     .trim()

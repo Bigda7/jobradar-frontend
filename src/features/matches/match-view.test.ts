@@ -80,4 +80,14 @@ describe('match view helpers', () => {
       salaryDisclosedPercentage: 33,
     });
   });
+
+  it('sorts updates without pretending they are first-publication dates', () => {
+    const jobs = [
+      createMatch(1, 80, { source_updated_at: '2026-08-28T10:00:00Z' }),
+      createMatch(2, 80, { published_at: '2026-08-27T10:00:00Z' }),
+      createMatch(3, 80),
+    ];
+    expect(sortLoadedMatches(jobs, 'newest').map((item) => item.id)).toEqual([1, 2, 3]);
+    expect(jobs[0].published_at).toBeNull();
+  });
 });

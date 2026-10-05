@@ -8,6 +8,13 @@ import {
 } from './schemas';
 
 describe('external URL validation', () => {
+  it('accepts nullable update dates and older responses without the new field', () => {
+    const field = jobResponseSchema.shape.source_updated_at;
+    expect(field.parse(undefined)).toBeUndefined();
+    expect(field.parse(null)).toBeNull();
+    expect(field.parse('2026-10-05T12:00:00Z')).toBe('2026-10-05T12:00:00Z');
+    expect(field.safeParse('not-a-date').success).toBe(false);
+  });
   it.each([
     'javascript:alert(1)',
     'data:text/html,<script>alert(1)</script>',
