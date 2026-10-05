@@ -64,6 +64,11 @@ function formatCoverageNote(source: SourceResponse): string | null {
       `${source.last_detail_failure_count} ${source.last_detail_failure_count === 1 ? 'vacancy has' : 'vacancies have'} limited details.`,
     );
   }
+  if ((source.last_metadata_deferred_count ?? 0) > 0) {
+    notes.push(
+      `${source.last_metadata_deferred_count} metadata refreshes await later runs within the hourly request budget.`,
+    );
+  }
   if (source.last_coverage_warning === 'all_candidates_filtered') {
     notes.push('All discovered candidates were filtered out.');
   }
@@ -150,7 +155,7 @@ export function SourceCard({ source }: SourceCardProps) {
         </div>
       ) : null}
 
-      <div className="mt-auto pt-5">
+      <div className="mt-auto space-y-3 pt-5">
         {source.last_error ? (
           <div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.055] p-3">
             <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-300">
@@ -161,7 +166,8 @@ export function SourceCard({ source }: SourceCardProps) {
               {source.last_error}
             </p>
           </div>
-        ) : coverageNote ? (
+        ) : null}
+        {coverageNote ? (
           <div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.055] p-3">
             <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-300">
               <AlertTriangle className="h-3.5 w-3.5" />
@@ -171,11 +177,12 @@ export function SourceCard({ source }: SourceCardProps) {
               {coverageNote}
             </p>
           </div>
-        ) : (
+        ) : null}
+        {!source.last_error && !coverageNote ? (
           <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-3 text-xs text-zinc-700">
             No error reported
           </div>
-        )}
+        ) : null}
       </div>
     </article>
   );
