@@ -2,7 +2,7 @@ import { CalendarDays, ChevronRight } from 'lucide-react';
 
 import type { MatchResponse } from '../../api';
 import { TrackerStatusControl } from '../tracker/tracker-status-control';
-import { formatLabel, formatRelativeDate, formatSalary } from './formatters';
+import { formatJobDate, formatLabel, formatSalary } from './formatters';
 
 interface MatchCardProps {
   match: MatchResponse;
@@ -96,7 +96,7 @@ export function MatchCard({
           <span className="flex min-w-0 items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">
-              {formatRelativeDate(match.published_at)}
+              {formatJobDate(match)}
             </span>
           </span>
           {!compact ? (

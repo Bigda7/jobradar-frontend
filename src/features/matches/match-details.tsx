@@ -12,7 +12,7 @@ import type { MatchResponse } from '../../api';
 import { useDrawerAccessibility } from '../../hooks/use-drawer-accessibility';
 import { isSafeExternalUrl } from '../../security/external-url';
 import { TrackerStatusControl } from '../tracker/tracker-status-control';
-import { formatLabel, formatRelativeDate, formatSalary } from './formatters';
+import { formatJobDate, formatLabel, formatSalary } from './formatters';
 
 interface MatchDetailsProps {
   match: MatchResponse;
@@ -51,7 +51,7 @@ export function MatchDetails({ match, onClose }: MatchDetailsProps) {
         <div>
           <span className="text-xs font-medium text-zinc-500">Match details</span>
           <span className="mt-1 block text-[11px] text-zinc-700">
-            {formatRelativeDate(match.published_at)}
+            {formatJobDate(match)}
           </span>
         </div>
         <button
