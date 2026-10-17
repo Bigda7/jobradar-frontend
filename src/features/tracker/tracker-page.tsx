@@ -271,7 +271,7 @@ export function TrackerPage() {
             ) : null}
           </header>
 
-          <div className="premium-scrollbar min-h-0 flex-1 overflow-y-auto">
+          <div className="premium-scrollbar min-h-0 flex-1 overflow-y-auto pr-2 [scrollbar-gutter:stable]">
             {totalCount === 0 ? (
               <div className="grid min-h-[460px] place-items-center p-6 text-center">
                 <div className="max-w-sm">

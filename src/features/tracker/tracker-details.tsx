@@ -29,7 +29,7 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
   const titleId = useId();
   const notesId = useId();
   const { closeButtonRef, isModal, panelRef } =
-    useDrawerAccessibility(onClose);
+    useDrawerAccessibility(onClose, '(width < 100rem)');
   const sourceUrl = isSafeExternalUrl(record.snapshot.sourceUrl)
     ? record.snapshot.sourceUrl
     : null;
@@ -78,7 +78,7 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
         aria-modal={isModal || undefined}
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-white/[0.08] bg-panel shadow-[-24px_0_80px_rgb(0_0_0/35%)] outline-none sm:max-w-[480px] xl:static xl:z-auto xl:max-w-[430px] xl:shrink-0 xl:shadow-none"
+        className="fixed inset-y-0 right-0 z-50 flex min-w-0 w-full flex-col border-l border-white/[0.08] bg-panel shadow-[-24px_0_80px_rgb(0_0_0/35%)] outline-none sm:max-w-[480px] min-[100rem]:static min-[100rem]:z-auto min-[100rem]:max-w-[430px] min-[100rem]:shrink-0 min-[100rem]:shadow-none"
       >
       <header className="flex h-[76px] shrink-0 items-center justify-between border-b border-white/[0.07] px-5">
         <div>
@@ -100,7 +100,7 @@ export function TrackerDetails({ record, onClose }: TrackerDetailsProps) {
         </button>
       </header>
 
-      <div className="premium-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-6">
+      <div className="premium-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 [scrollbar-gutter:stable]">
         <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-zinc-600">
           {platform}
         </p>

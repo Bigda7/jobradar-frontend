@@ -13,8 +13,8 @@ interface TrackerTableProps {
 
 export function TrackerTable({ records, selectedId = null, onSelect }: TrackerTableProps) {
   return (
-    <>
-      <div className="divide-y divide-white/[0.05] md:hidden">
+    <div className="@container/tracker-table">
+      <div className="divide-y divide-white/[0.05] @min-[900px]/tracker-table:hidden">
         {records.map((record) => (
           <article
             key={record.opportunityId}
@@ -37,7 +37,7 @@ export function TrackerTable({ records, selectedId = null, onSelect }: TrackerTa
                 <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.09em] text-zinc-600">
                   {formatTrackerPlatform(record.snapshot)}
                 </span>
-                <h2 className="mt-1.5 line-clamp-2 text-sm font-semibold leading-5 text-zinc-100">
+                <h2 className="mt-1.5 line-clamp-2 break-words text-sm font-semibold leading-5 text-zinc-100">
                   {record.snapshot.title}
                 </h2>
                 {record.snapshot.company ? (
@@ -46,7 +46,7 @@ export function TrackerTable({ records, selectedId = null, onSelect }: TrackerTa
                   </p>
                 ) : null}
               </div>
-              <div className="relative z-20">
+              <div className="relative z-20 shrink-0">
                 <TrackerRecordStatusSelect record={record} compact />
               </div>
             </div>
@@ -64,8 +64,15 @@ export function TrackerTable({ records, selectedId = null, onSelect }: TrackerTa
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[900px] border-collapse text-left">
+      <div className="hidden @min-[900px]/tracker-table:block">
+        <table className="w-full table-fixed border-collapse text-left">
+          <colgroup>
+            <col className="w-36" />
+            <col />
+            <col className="w-[152px]" />
+            <col className="w-36" />
+            <col className="w-32" />
+          </colgroup>
           <thead className="sticky top-0 z-10 bg-panel text-[10px] font-semibold uppercase tracking-[0.09em] text-zinc-700">
             <tr className="border-b border-white/[0.06]">
               <th className="px-6 py-3">Platform</th>
@@ -127,6 +134,6 @@ export function TrackerTable({ records, selectedId = null, onSelect }: TrackerTa
           </tbody>
         </table>
       </div>
-    </>
+    </div>
   );
 }

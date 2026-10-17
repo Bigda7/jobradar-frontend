@@ -12,7 +12,10 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-export function useDrawerAccessibility(onClose: () => void) {
+export function useDrawerAccessibility(
+  onClose: () => void,
+  modalMediaQuery = overlayMediaQuery,
+) {
   const panelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
@@ -20,7 +23,7 @@ export function useDrawerAccessibility(onClose: () => void) {
   const [isModal, setIsModal] = useState(() =>
     typeof window === 'undefined'
       ? false
-      : window.matchMedia(overlayMediaQuery).matches,
+      : window.matchMedia(modalMediaQuery).matches,
   );
 
   useEffect(() => {
@@ -28,12 +31,12 @@ export function useDrawerAccessibility(onClose: () => void) {
   }, [onClose]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia(overlayMediaQuery);
+    const mediaQuery = window.matchMedia(modalMediaQuery);
     const handleChange = (event: MediaQueryListEvent) => setIsModal(event.matches);
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+  }, [modalMediaQuery]);
 
   useEffect(() => {
     if (!isModal) {
