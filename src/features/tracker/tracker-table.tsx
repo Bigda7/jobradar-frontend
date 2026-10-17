@@ -7,22 +7,29 @@ import type { TrackerRecord } from './tracker-schema';
 
 interface TrackerTableProps {
   records: TrackerRecord[];
+  selectedId?: number | null;
   onSelect: (record: TrackerRecord) => void;
 }
 
-export function TrackerTable({ records, onSelect }: TrackerTableProps) {
+export function TrackerTable({ records, selectedId = null, onSelect }: TrackerTableProps) {
   return (
     <>
       <div className="divide-y divide-white/[0.05] md:hidden">
         {records.map((record) => (
           <article
             key={record.opportunityId}
-            className="relative cursor-pointer px-4 py-4 transition-colors hover:bg-white/[0.025] focus-within:bg-white/[0.035] focus-within:ring-2 focus-within:ring-inset focus-within:ring-radar/20"
+            data-selected={record.opportunityId === selectedId}
+            className={`relative cursor-pointer px-4 py-4 transition-colors duration-200 focus-within:ring-2 focus-within:ring-inset focus-within:ring-radar/40 ${
+              record.opportunityId === selectedId
+                ? 'bg-radar/[0.09] shadow-[inset_3px_0_0_var(--color-radar)]'
+                : 'hover:bg-white/[0.025] focus-within:bg-white/[0.035]'
+            }`}
           >
             <button
               type="button"
               onClick={() => onSelect(record)}
               aria-label={`Open details for ${record.snapshot.title}`}
+              aria-current={record.opportunityId === selectedId ? 'true' : undefined}
               className="absolute inset-0 z-10 focus-visible:outline-none"
             />
             <div className="flex items-start justify-between gap-3">
@@ -72,8 +79,13 @@ export function TrackerTable({ records, onSelect }: TrackerTableProps) {
             {records.map((record) => (
               <tr
                 key={record.opportunityId}
+                data-selected={record.opportunityId === selectedId}
                 onClick={() => onSelect(record)}
-                className="cursor-pointer transition-colors hover:bg-white/[0.025] focus-within:bg-white/[0.035]"
+                className={`cursor-pointer transition-colors duration-200 ${
+                  record.opportunityId === selectedId
+                    ? 'bg-radar/[0.09] shadow-[inset_3px_0_0_var(--color-radar)]'
+                    : 'hover:bg-white/[0.025] focus-within:bg-white/[0.035]'
+                }`}
               >
                 <td className="max-w-40 px-6 py-4 align-middle">
                   <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.09em] text-zinc-500">
@@ -89,6 +101,7 @@ export function TrackerTable({ records, onSelect }: TrackerTableProps) {
                         onSelect(record);
                       }}
                       aria-label={`Open details for ${record.snapshot.title}`}
+                      aria-current={record.opportunityId === selectedId ? 'true' : undefined}
                       className="max-w-full truncate text-left hover:text-radar focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70"
                     >
                       {record.snapshot.title}

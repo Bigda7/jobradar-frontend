@@ -41,6 +41,7 @@ type ViewMode = 'board' | 'list';
 
 const minimumScoreOptions = [
   { value: '0', label: 'All scores' },
+  { value: 'explore', label: 'Explore 35–54' },
   { value: '55', label: '55 and above' },
   { value: '70', label: '70 and above' },
   { value: '85', label: '85 and above' },
@@ -66,11 +67,12 @@ const allSourcesValue = 'all';
 export function MatchesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('board');
   const [searchParams, setSearchParams] = useSearchParams();
-  const { minimumScore, offset, sort, tierFocus } = readMatchPageOptions(searchParams);
+  const { minimumScore, maximumScore, offset, sort, tierFocus } = readMatchPageOptions(searchParams);
   const trackerState = useTrackerState();
   const selectedSource = searchParams.get('source') ?? allSourcesValue;
   const filters: MatchFilters = {
     min_score: minimumScore,
+    ...(maximumScore < 100 ? { max_score: maximumScore } : {}),
     sort,
     limit: pageSize,
     offset,
@@ -94,6 +96,7 @@ export function MatchesPage() {
 
       return previousFilters?.source === filters.source &&
         previousFilters?.min_score === filters.min_score &&
+        previousFilters?.max_score === filters.max_score &&
         previousFilters?.sort === filters.sort
         ? previousData
         : undefined;
@@ -160,9 +163,14 @@ export function MatchesPage() {
     updateParams((params) => params.delete('opportunity'));
   }, [updateParams]);
 
-  const selectMinimumScore = (value: number) => {
+  const selectMinimumScore = (value: string) => {
     updateParams((params) => {
-      params.set('min_score', String(value));
+      params.set('min_score', value === 'explore' ? '35' : value);
+      if (value === 'explore') {
+        params.set('max_score', '54');
+      } else {
+        params.delete('max_score');
+      }
       params.delete('offset');
       params.delete('opportunity');
       params.delete('tier');
@@ -193,6 +201,11 @@ export function MatchesPage() {
         params.set('tier', tier);
       }
       if (tier !== 'all' && minimumScore > requiredMinimum) {
+        params.set('min_score', String(requiredMinimum));
+        params.delete('offset');
+      }
+      if (tier !== 'all' && maximumScore < requiredMinimum) {
+        params.delete('max_score');
         params.set('min_score', String(requiredMinimum));
         params.delete('offset');
       }
@@ -263,12 +276,12 @@ export function MatchesPage() {
                   triggerClassName="col-span-2 w-full sm:w-auto sm:min-w-40"
                 />
                 <PremiumSelect
-                  value={String(minimumScore)}
-                  onValueChange={(value) => selectMinimumScore(Number(value))}
+                  value={minimumScore === 35 && maximumScore === 54 ? 'explore' : String(minimumScore)}
+                  onValueChange={selectMinimumScore}
                   options={minimumScoreOptions}
-                  label="Minimum match score"
+                  label="Match score range"
                   leadingIcon={<SlidersHorizontal className="h-3.5 w-3.5" />}
-                  triggerClassName="w-full min-w-0 sm:w-auto sm:min-w-36"
+                  triggerClassName="col-span-2 w-full min-w-0 sm:col-span-1 sm:w-auto sm:min-w-36"
                 />
                 <PremiumSelect
                   value={sort}
@@ -276,7 +289,7 @@ export function MatchesPage() {
                   options={sortOptions}
                   label="Sort all results"
                   leadingIcon={<ArrowDownUp className="h-3.5 w-3.5" />}
-                  triggerClassName="w-full min-w-0 px-2 text-[11px] sm:w-auto sm:min-w-44 sm:px-3 sm:text-xs"
+                  triggerClassName="col-span-2 w-full min-w-0 px-2 text-[11px] sm:col-span-1 sm:w-auto sm:min-w-44 sm:px-3 sm:text-xs"
                 />
 
                 <div
@@ -313,6 +326,12 @@ export function MatchesPage() {
               </div>
             </div>
 
+            {maximumScore < 55 ? (
+              <p className="border-t border-white/[0.04] px-4 py-3 text-xs leading-relaxed text-zinc-500 sm:px-6 lg:px-7">
+                Explore possible opportunities with gaps or uncertainty. Read the concerns before applying.
+                These scores are below the main recommendation and notification threshold.
+              </p>
+            ) : null}
             <div className="flex flex-col gap-3 border-t border-white/[0.04] px-4 py-3 sm:px-6 xl:flex-row xl:items-center xl:justify-between lg:px-7">
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-1.5">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-700 sm:mr-1">

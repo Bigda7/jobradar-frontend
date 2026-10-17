@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { handleDrawerEscape } from './drawer-keyboard';
+
 const overlayMediaQuery = '(max-width: 1279px)';
 const focusableSelector = [
   'a[href]',
@@ -61,16 +63,7 @@ export function useDrawerAccessibility(onClose: () => void) {
       }
 
       if (event.key === 'Escape') {
-        const target = event.target;
-        const containingDialog =
-          target instanceof Element ? target.closest('[role="dialog"]') : null;
-
-        if (containingDialog && containingDialog !== panel) {
-          return;
-        }
-
-        event.preventDefault();
-        onCloseRef.current();
+        handleDrawerEscape(event, panel, onCloseRef.current);
         return;
       }
 

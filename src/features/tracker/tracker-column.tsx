@@ -12,6 +12,7 @@ import type { TrackerRecord, TrackerStatus } from './tracker-schema';
 interface TrackerColumnProps {
   status: TrackerStatus;
   records: TrackerRecord[];
+  selectedId?: number | null;
   onSelect: (record: TrackerRecord) => void;
   className?: string;
 }
@@ -19,6 +20,7 @@ interface TrackerColumnProps {
 export function TrackerColumn({
   status,
   records,
+  selectedId = null,
   onSelect,
   className = '',
 }: TrackerColumnProps) {
@@ -66,6 +68,7 @@ export function TrackerColumn({
               <TrackerCard
                 key={record.opportunityId}
                 record={record}
+                isSelected={record.opportunityId === selectedId}
                 onSelect={onSelect}
               />
             ))

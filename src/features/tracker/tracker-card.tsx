@@ -17,6 +17,7 @@ interface TrackerCardProps {
   record: TrackerRecord;
   onSelect: (record: TrackerRecord) => void;
   sortable?: boolean;
+  isSelected?: boolean;
 }
 
 interface TrackerCardContentProps {
@@ -27,6 +28,7 @@ interface TrackerCardContentProps {
   style?: CSSProperties;
   dragging?: boolean;
   overlay?: boolean;
+  isSelected?: boolean;
 }
 
 function TrackerCardContent({
@@ -37,6 +39,7 @@ function TrackerCardContent({
   style,
   dragging = false,
   overlay = false,
+  isSelected = false,
 }: TrackerCardContentProps) {
   const salary = formatTrackerSalary(record.snapshot);
   const platform = formatTrackerPlatform(record.snapshot);
@@ -45,16 +48,21 @@ function TrackerCardContent({
     <article
       ref={nodeRef}
       style={style}
-      className={`relative rounded-xl border bg-card p-4 transition-colors ${
+      data-selected={isSelected}
+      className={`relative rounded-xl border p-4 transition-colors duration-200 ${
         overlay
           ? 'border-radar/45 shadow-2xl shadow-black/45'
-          : 'shadow-sm shadow-black/10'
+          : isSelected
+            ? 'shadow-[inset_3px_0_0_var(--color-radar)]'
+            : 'shadow-sm shadow-black/10'
       } ${
         dragging
-          ? 'border-radar/25 opacity-20'
+          ? 'border-radar/25 bg-card opacity-20'
           : overlay
-            ? ''
-            : 'cursor-pointer border-white/[0.07] hover:border-white/[0.12] hover:bg-card-hover focus-within:border-radar/45 focus-within:ring-2 focus-within:ring-radar/10'
+            ? 'bg-card'
+            : isSelected
+              ? 'cursor-pointer border-radar/45 bg-radar/[0.09] focus-within:ring-2 focus-within:ring-radar/40'
+              : 'cursor-pointer border-white/[0.07] bg-card hover:border-white/[0.12] hover:bg-card-hover focus-within:border-radar/45 focus-within:ring-2 focus-within:ring-radar/10'
       }`}
     >
       {onSelect ? (
@@ -62,6 +70,7 @@ function TrackerCardContent({
           type="button"
           onClick={() => onSelect(record)}
           aria-label={`Open details for ${record.snapshot.title}`}
+          aria-current={isSelected ? 'true' : undefined}
           className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none"
         />
       ) : null}
@@ -128,6 +137,7 @@ export function TrackerCard({
   record,
   onSelect,
   sortable = true,
+  isSelected = false,
 }: TrackerCardProps) {
   const sortableState = useSortable({
     id: getTrackerSortableId(record.opportunityId),
@@ -151,6 +161,7 @@ export function TrackerCard({
     <TrackerCardContent
       record={record}
       onSelect={onSelect}
+      isSelected={isSelected}
       nodeRef={sortableState.setNodeRef}
       style={style}
       dragging={sortableState.isDragging}

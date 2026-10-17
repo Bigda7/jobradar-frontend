@@ -116,7 +116,7 @@ export function CommandPalette({
         <Dialog.Content className="fixed left-1/2 top-[14vh] z-[120] w-[min(640px,calc(100%-24px))] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/[0.1] bg-surface shadow-[0_28px_100px_rgb(0_0_0/60%)] outline-none">
           <Dialog.Title className="sr-only">JobRadar command palette</Dialog.Title>
           <Command shouldFilter={false} className="bg-transparent text-zinc-100">
-            <div className="flex h-14 items-center gap-3 border-b border-white/[0.07] px-4">
+            <div className="command-palette-search flex h-14 items-center gap-3 border-b border-white/[0.07] px-4">
               <Search
                 className="h-4 w-4 shrink-0 text-zinc-600"
                 aria-hidden="true"
@@ -125,7 +125,7 @@ export function CommandPalette({
                 value={search}
                 onValueChange={setSearch}
                 placeholder="Navigate or search remote jobs"
-                className="h-full min-w-0 flex-1 bg-transparent text-sm text-zinc-100 outline-none placeholder:text-zinc-700"
+                className="command-palette-input h-full min-w-0 flex-1 bg-transparent text-sm text-zinc-100 outline-none placeholder:text-zinc-700"
               />
               <kbd className="hidden rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-1 text-[10px] text-zinc-600 sm:inline">
                 Esc

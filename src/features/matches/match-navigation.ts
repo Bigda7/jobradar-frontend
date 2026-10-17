@@ -22,14 +22,17 @@ function readInteger(
 
 export function readMatchPageOptions(params: URLSearchParams): {
   minimumScore: number;
+  maximumScore: number;
   offset: number;
   sort: MatchSort;
   tierFocus: MatchTierFocus;
 } {
   const requestedSort = params.get('sort');
   const requestedTier = params.get('tier');
+  const minimumScore = readInteger(params.get('min_score'), 0, 100, defaultMinimumScore);
   return {
-    minimumScore: readInteger(params.get('min_score'), 0, 100, defaultMinimumScore),
+    minimumScore,
+    maximumScore: readInteger(params.get('max_score'), minimumScore, 100, 100),
     offset: readInteger(params.get('offset'), 0, maximumOffset, 0),
     sort:
       requestedSort === 'newest' || requestedSort === 'company'
@@ -46,6 +49,9 @@ export function createMatchRoute(id: number, filters: MatchFilters): string {
   const params = new URLSearchParams();
   params.set('opportunity', String(id));
   params.set('min_score', String(filters.min_score ?? defaultMinimumScore));
+  if (filters.max_score !== undefined) {
+    params.set('max_score', String(filters.max_score));
+  }
   params.set('sort', filters.sort ?? 'score');
   params.set('offset', String(filters.offset ?? 0));
   if (filters.source) {

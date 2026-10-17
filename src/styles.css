@@ -81,6 +81,19 @@ textarea {
   outline-offset: 2px;
 }
 
+.command-palette-search {
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.command-palette-search:focus-within {
+  background-color: color-mix(in srgb, var(--color-radar) 3%, transparent);
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-radar) 55%, transparent);
+}
+
+.command-palette-input:focus-visible {
+  outline: none;
+}
+
 ::selection {
   color: #101112;
   background: #a3e635;
