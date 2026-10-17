@@ -309,6 +309,7 @@ export function TrackerPage() {
                         key={getTrackerColumnId(status)}
                         status={status}
                         records={records}
+                        selectedId={selectedRecord?.opportunityId ?? null}
                         onSelect={(record) => setSelectedId(record.opportunityId)}
                         className={status === mobileStage ? '' : 'hidden md:flex'}
                       />
@@ -324,6 +325,7 @@ export function TrackerPage() {
             ) : mode === 'all' && visibleRecords.length > 0 ? (
               <TrackerTable
                 records={visibleRecords}
+                selectedId={selectedRecord?.opportunityId ?? null}
                 onSelect={(record) => setSelectedId(record.opportunityId)}
               />
             ) : (

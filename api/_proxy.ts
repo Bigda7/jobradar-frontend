@@ -58,6 +58,55 @@ function isJsonContentType(value: string | null): boolean {
   return mediaType === 'application/json' || Boolean(mediaType?.endsWith('+json'));
 }
 
+class UpstreamResponseTooLargeError extends Error {}
+
+async function readBoundedBody(
+  response: Response,
+  signal: AbortSignal,
+): Promise<ArrayBuffer> {
+  signal.throwIfAborted();
+  if (!response.body) {
+    return new ArrayBuffer(0);
+  }
+
+  const reader = response.body.getReader();
+  const cancelRead = () => {
+    // Do not let a slow cancellation callback extend the request deadline.
+    void reader.cancel().catch(() => undefined);
+  };
+  signal.addEventListener('abort', cancelRead, { once: true });
+  let buffer = new Uint8Array(0);
+  let size = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      signal.throwIfAborted();
+      if (done) {
+        return buffer.slice(0, size).buffer;
+      }
+      const nextSize = size + value.byteLength;
+      if (nextSize > maximumResponseBytes) {
+        throw new UpstreamResponseTooLargeError();
+      }
+      if (nextSize > buffer.byteLength) {
+        const capacity = Math.min(
+          maximumResponseBytes,
+          Math.max(nextSize, buffer.byteLength * 2, 1024),
+        );
+        const expanded = new Uint8Array(capacity);
+        expanded.set(buffer.subarray(0, size));
+        buffer = expanded;
+      }
+      buffer.set(value, size);
+      size = nextSize;
+    }
+  } finally {
+    signal.removeEventListener('abort', cancelRead);
+    reader.releaseLock();
+  }
+}
+
 export async function proxyJobRadar(
   request: Request,
   upstreamPath: string,
@@ -82,24 +131,28 @@ export async function proxyJobRadar(
   const upstreamUrl = new URL(upstreamPath, configuration.origin);
   upstreamUrl.search = incomingUrl.search;
 
+  const controller = new AbortController();
+  const signal = AbortSignal.any([
+    AbortSignal.timeout(upstreamTimeoutMilliseconds),
+    controller.signal,
+    request.signal,
+  ]);
+  let upstreamResponse: Response | undefined;
+
   try {
-    const upstreamResponse = await fetch(upstreamUrl, {
+    signal.throwIfAborted();
+    upstreamResponse = await fetch(upstreamUrl, {
       method: 'GET',
       headers: {
         Accept: 'application/json',
         Authorization: `Bearer ${configuration.token}`,
       },
       redirect: 'error',
-      signal: AbortSignal.timeout(upstreamTimeoutMilliseconds),
+      signal,
     });
     const declaredLength = Number(upstreamResponse.headers.get('content-length'));
 
     if (Number.isFinite(declaredLength) && declaredLength > maximumResponseBytes) {
-      return jsonError(502, 'The upstream API response is too large.');
-    }
-
-    const body = await upstreamResponse.arrayBuffer();
-    if (body.byteLength > maximumResponseBytes) {
       return jsonError(502, 'The upstream API response is too large.');
     }
 
@@ -111,7 +164,8 @@ export async function proxyJobRadar(
       );
     }
 
-    return new Response(body, {
+    const body = await readBoundedBody(upstreamResponse, signal);
+    return new Response([204, 205, 304].includes(upstreamResponse.status) ? null : body, {
       status: upstreamResponse.status,
       headers: {
         'Cache-Control': 'no-store',
@@ -120,6 +174,9 @@ export async function proxyJobRadar(
       },
     });
   } catch (error) {
+    if (error instanceof UpstreamResponseTooLargeError) {
+      return jsonError(502, 'The upstream API response is too large.');
+    }
     const timedOut = error instanceof Error && error.name === 'TimeoutError';
     console.error(
       'JobRadar API proxy request failed.',
@@ -129,5 +186,9 @@ export async function proxyJobRadar(
       timedOut ? 504 : 502,
       timedOut ? 'The upstream API timed out.' : 'The upstream API is unavailable.',
     );
+  } finally {
+    controller.abort();
+    // The primary result must not be hidden by cancellation failures.
+    void upstreamResponse?.body?.cancel().catch(() => undefined);
   }
 }

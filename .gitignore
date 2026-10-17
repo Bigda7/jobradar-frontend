@@ -34,6 +34,7 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+/.deploy/
 *.tsbuildinfo
 
 # local backups and data

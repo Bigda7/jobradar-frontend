@@ -56,6 +56,19 @@ describe.sequential('JobRadar API proxy', () => {
     expect(consoleError).toHaveBeenCalled();
   });
 
+  it('preserves both score bounds for the exploratory matches query', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ items: [] }));
+    vi.stubGlobal('fetch', fetchMock);
+    await proxyJobRadar(
+      new Request('https://app.example.com/api/matches?min_score=35&max_score=54&offset=50'),
+      '/matches',
+    );
+    const [url] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.searchParams.get('min_score')).toBe('35');
+    expect(url.searchParams.get('max_score')).toBe('54');
+    expect(url.searchParams.get('offset')).toBe('50');
+  });
+
   it('rejects an HTML response instead of passing the SPA shell as API data', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.stubGlobal(

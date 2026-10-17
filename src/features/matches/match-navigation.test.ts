@@ -16,6 +16,7 @@ describe('match navigation', () => {
     expect(params.get('opportunity')).toBe('214');
     expect(readMatchPageOptions(params)).toEqual({
       minimumScore: 70,
+      maximumScore: 100,
       offset: 50,
       sort: 'newest',
       tierFocus: 'all',
@@ -31,6 +32,7 @@ describe('match navigation', () => {
 
     expect(options).toEqual({
       minimumScore: 55,
+      maximumScore: 100,
       offset: 0,
       sort: 'score',
       tierFocus: 'all',
@@ -41,5 +43,18 @@ describe('match navigation', () => {
     const options = readMatchPageOptions(new URLSearchParams('tier=strong'));
 
     expect(options.tierFocus).toBe('strong');
+  });
+
+  it('preserves the exploratory range in links and restores it on reload', () => {
+    const route = createMatchRoute(12, { min_score: 35, max_score: 54, offset: 50 });
+    const params = new URL(route, 'https://example.test').searchParams;
+    expect(readMatchPageOptions(params)).toMatchObject({
+      minimumScore: 35, maximumScore: 54, offset: 50,
+    });
+  });
+
+  it('rejects an upper bound below the lower bound', () => {
+    expect(readMatchPageOptions(new URLSearchParams('min_score=70&max_score=54')))
+      .toMatchObject({ minimumScore: 70, maximumScore: 100 });
   });
 });
