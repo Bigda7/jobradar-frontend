@@ -27,7 +27,7 @@ import {
 } from '../tracker/tracker-store';
 import { MatchCard } from './match-card';
 import { MatchDetails } from './match-details';
-import { MatchTierChip } from './match-tier-chip';
+import { MatchSummary } from './match-summary';
 import { readMatchPageOptions } from './match-navigation';
 import {
   filterMatchesByTier,
@@ -51,13 +51,6 @@ const sortOptions = [
   { value: 'score', label: 'Score: high to low' },
   { value: 'newest', label: 'Publication: newest' },
   { value: 'company', label: 'Company: A to Z' },
-];
-
-const tierChips: { value: MatchTierFocus; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'top', label: 'Top 85+' },
-  { value: 'strong', label: 'Strong 70–84' },
-  { value: 'good', label: 'Good 55–69' },
 ];
 
 const pageSize = 50;
@@ -326,51 +319,12 @@ export function MatchesPage() {
               </div>
             </div>
 
-            {maximumScore < 55 ? (
-              <p className="border-t border-white/[0.04] px-4 py-3 text-xs leading-relaxed text-zinc-500 sm:px-6 lg:px-7">
-                Explore possible opportunities with gaps or uncertainty. Read the concerns before applying.
-                These scores are below the main recommendation and notification threshold.
-              </p>
-            ) : null}
-            <div className="flex flex-col gap-3 border-t border-white/[0.04] px-4 py-3 sm:px-6 xl:flex-row xl:items-center xl:justify-between lg:px-7">
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-1.5">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-700 sm:mr-1">
-                  Loaded results
-                </span>
-                <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
-                  {tierChips.map((chip) => (
-                    <MatchTierChip
-                      key={chip.value}
-                      tier={chip.value}
-                      label={chip.label}
-                      selected={tierFocus === chip.value}
-                      onSelect={selectTier}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid w-full grid-cols-2 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] sm:w-auto sm:grid-cols-4">
-                {[
-                  ['Top score', metrics.topScore ?? '—'],
-                  ['Remote', `${metrics.remotePercentage}%`],
-                  ['Salary shown', `${metrics.salaryDisclosedPercentage}%`],
-                  ['Tracked', trackedCount],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="min-w-0 border-l border-white/[0.05] px-3 py-2 first:border-l-0"
-                  >
-                    <span className="block text-[9px] uppercase tracking-[0.09em] text-zinc-700">
-                      {label}
-                    </span>
-                    <span className="mt-0.5 block text-xs font-semibold text-zinc-300">
-                      {value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <MatchSummary
+              metrics={metrics}
+              trackedCount={trackedCount}
+              tierFocus={tierFocus}
+              onSelectTier={selectTier}
+            />
 
             <div className="flex min-h-9 flex-wrap items-center justify-between gap-2 border-t border-white/[0.04] px-4 py-1.5 text-[10px] sm:px-6 lg:px-7">
               <div className="flex flex-wrap items-center gap-3 text-zinc-700">

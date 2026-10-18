@@ -10,6 +10,7 @@ import {
 import { AppShell } from '../../components/app-shell';
 
 const githubRepositoryUrl = 'https://github.com/Bigda7/jobradar-frontend';
+const privacyEmail = 'bohdan.mozghovyi.dev@gmail.com';
 
 const sections = [
   {
@@ -25,7 +26,8 @@ const sections = [
     icon: HardDrive,
     paragraphs: [
       'Your color theme preference and Job Tracker records are stored in localStorage on the device and browser you are using. Tracker records can include vacancy snapshots, application status, and notes you enter.',
-      'Tracker data is not sent to the JobRadar backend, is not encrypted, and is not backed up. Clearing this site’s browser storage removes it. Do not place passwords, access tokens, financial information, medical information, or other sensitive data in tracker notes.',
+      'Tracker data is not sent to the JobRadar backend. JobRadar does not encrypt it within browser storage or provide cloud backup or synchronization. Browser or operating-system backups are outside JobRadar’s control. Do not place passwords, access tokens, financial information, medical information, or other sensitive data in tracker notes.',
+      'Removing a tracker record clears its saved content from this site’s browser storage when storage access succeeds; a minimal deletion marker remains to keep other open tabs from restoring it. If a storage error is shown, cleanup may be incomplete until storage is available again. To remove all local tracker data and your theme preference, clear the site data for this website in your browser settings.',
     ],
   },
   {
@@ -33,15 +35,24 @@ const sections = [
     icon: Server,
     paragraphs: [
       'The web application is delivered through Vercel and the JobRadar API is hosted on Amazon Web Services. These providers and the application server may process standard technical request data, such as an IP address, browser information, requested path, and timestamp, to deliver, secure, and troubleshoot the service.',
-      'JobRadar does not use technical request data for advertising or to build user profiles. Operational log retention follows the active infrastructure configuration and the applicable provider policies.',
+      'JobRadar does not use technical request data for advertising or to build visitor profiles. Application logs rotate by configured size limits rather than a guaranteed number of days; hosting-provider logs follow their configured retention. Requested paths and filters may appear in technical logs. Do not put sensitive personal information into search fields.',
     ],
   },
   {
     title: 'Vacancy data and external services',
     icon: Radar,
     paragraphs: [
-      'JobRadar collects vacancy information from identified third-party job boards, freelance platforms, feeds, and public applicant-tracking sources. Job listings, company names, trademarks, and source content remain the property of their respective owners.',
+      'The current vacancy sources are Djinni, Work.ua, Robota.ua and DOU. JobRadar stores vacancy details and may display descriptions, company names, location, salary and links when available. Source descriptions can contain contact information supplied by the publisher. Job listings, company names, trademarks, and source content remain the property of their respective owners.',
+      'Collection uses source feeds and web pages. Jina Reader is used for some page retrievals and receives the requested source URLs. This does not send your browser-local tracker notes to Jina. Access methods and permissions differ by source; this notice is not a claim of blanket permission or partnership.',
       'Each available vacancy link opens the original source. JobRadar is not affiliated with or endorsed by the listed employers or platforms, and it cannot guarantee that a vacancy remains available or that source information is complete, current, or error-free.',
+    ],
+  },
+  {
+    title: 'Owner notifications and retained records',
+    icon: Server,
+    paragraphs: [
+      'The owner-operated Telegram bot sends vacancy summaries and source links to the configured owner chat. Telegram processes the bot interactions and message content. JobRadar stores notification delivery history, message identifiers and bot-related vacancy state to avoid duplicate messages. Visiting this website does not subscribe you to Telegram notifications or send your tracker notes to the bot.',
+      'Vacancy records, matching results and delivery history are retained on the backend for search, deduplication and notification reliability. Archiving an old vacancy does not erase its stored record. Backend backups have separate retention and do not include your browser-local tracker notes. No fixed maximum retention period is currently promised for these backend records; contact the operator about personal information in a listing or a removal request.',
     ],
   },
   {
@@ -125,9 +136,16 @@ export function LegalPage() {
                   Questions and updates
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-                  Use the GitHub repository contact channels for technical or
-                  privacy questions. Do not include sensitive personal data in
-                  a public issue.
+                  JobRadar is maintained by Bohdan Mozghovyi. Use GitHub for bugs
+                  and technical suggestions. For private questions about personal
+                  data, corrections or removal requests, email{' '}
+                  <a href={`mailto:${privacyEmail}`} className="break-all text-zinc-200 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-radar/70">
+                    {privacyEmail}
+                  </a>. Include the relevant vacancy link when applicable, but
+                  never passwords or access tokens. Do not post personal data in
+                  a public GitHub issue. We will review what can be corrected or
+                  removed within JobRadar; browser-local data must be managed in
+                  your own browser, and the original platform controls its copy.
                 </p>
               </div>
               <a
@@ -143,7 +161,7 @@ export function LegalPage() {
           </section>
 
           <p className="mt-5 text-center text-[11px] text-zinc-500">
-            Last updated September 6, 2026
+            Last updated October 18, 2026
           </p>
         </div>
       </main>

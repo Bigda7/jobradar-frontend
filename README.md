@@ -150,7 +150,17 @@ Tracker records remain in browser `localStorage`. Existing `jobradar.tracker.v1`
 - Storage access failures degrade to in-memory session behavior instead of crashing the application.
 - Updates are synchronized across tabs through the browser `storage` event. When the same field is edited in two tabs, the last saved value wins. Deletions are retained as tombstones so stale tabs cannot restore removed records.
 
-Tracker data is device-local, unencrypted, and not backed up. Do not store passwords, access tokens, financial information, medical information, or other sensitive data in personal notes.
+Removing a record purges its stored notes, snapshot and placement, including its
+legacy baseline copy. A minimal deletion marker remains to prevent stale-tab
+updates from restoring it; explicitly saving the vacancy again starts a fresh
+record. Previously deleted records are cleaned when the updated store loads or
+refreshes. Storage failures remain visible and cleanup is retried on subsequent
+storage refreshes or writes; keep the tab open if a pending change has not saved.
+
+Tracker data is device-local and not application-encrypted. JobRadar provides no
+cloud backup or synchronization; browser/OS backups are outside its control. Do
+not store passwords, access tokens, financial information, medical information,
+or other sensitive data in personal notes.
 
 ## Security
 

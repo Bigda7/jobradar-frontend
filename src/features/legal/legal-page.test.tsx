@@ -28,5 +28,13 @@ describe('LegalPage', () => {
     expect(html).toContain('does not use advertising cookies');
     expect(html).toContain('href="/legal"');
     expect(html).toContain('id="main-content"');
+    expect(html).toContain('href="mailto:bohdan.mozghovyi.dev@gmail.com"');
+    expect(html).toContain('GitHub for bugs');
+    expect(html).toContain('Jina Reader');
+    expect(html).toContain('Telegram');
+    expect(html).toContain('Djinni, Work.ua, Robota.ua and DOU');
+    expect(html).toContain('minimal deletion marker');
+    expect(html).toContain('does not erase its stored record');
+    expect(html).not.toContain('freelance platforms');
   });
 });
