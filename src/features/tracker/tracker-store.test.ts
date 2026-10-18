@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { JobResponse, MatchResponse } from '../../api';
+import { lifecyclePatch, trackerFieldKey } from './tracker-persistence';
 import {
   migrateTrackerState,
   trackerStorageKey,
@@ -33,6 +34,10 @@ class MemoryStorage implements TrackerStorage {
 
   setItem(key: string, value: string): void {
     this.values.set(key, value);
+  }
+
+  removeItem(key: string): void {
+    this.values.delete(key);
   }
 }
 
@@ -252,7 +257,7 @@ describe('tracker store', () => {
     store.removeOpportunity(42);
 
     expect(createTrackerStore({ storage }).getState().records['42']).toBeUndefined();
-    expect(storage.getItem(trackerStorageKey)).toContain('Frontend Developer');
+    expect(JSON.parse(storage.getItem(trackerStorageKey)!).records).toEqual({});
   });
 
   it('can explicitly save a record again after deletion', () => {
@@ -267,6 +272,157 @@ describe('tracker store', () => {
     const record = createTrackerStore({ storage }).getState().records['42'];
     expect(record.status).toBe('saved');
     expect(record.notes).toBe('');
+  });
+
+  it('erases stored content while preserving other records and unrelated preferences', () => {
+    const storage = new MemoryStorage();
+    const store = createTrackerStore({ storage });
+    store.saveOpportunity(createJob());
+    store.setNotes(42, 'Private interview note');
+    store.saveOpportunity(createJob({ id: 43, title: 'Another role' }));
+    storage.setItem(trackerStorageKey, JSON.stringify(store.getState()));
+    storage.setItem('theme', 'dark');
+
+    store.removeOpportunity(42);
+
+    for (const field of ['base', 'notes', 'placement'] as const) {
+      expect(storage.getItem(trackerFieldKey('42', field))).toBeNull();
+    }
+    expect(storage.getItem(trackerStorageKey)).not.toContain('Private interview note');
+    expect(storage.getItem(trackerStorageKey)).not.toContain('Frontend Developer');
+    expect(JSON.parse(storage.getItem(trackerFieldKey('42', 'lifecycle'))!)).toMatchObject({ deleted: true });
+    expect(createTrackerStore({ storage }).getState().records['43'].snapshot.title).toBe('Another role');
+    expect(storage.getItem('theme')).toBe('dark');
+  });
+
+  it('cleans content left by earlier versions for already deleted records', () => {
+    const storage = new MemoryStorage();
+    const store = createTrackerStore({ storage });
+    store.saveOpportunity(createJob());
+    store.setNotes(42, 'Previously deleted note');
+    const patch = lifecyclePatch('42', true, '2026-10-18T12:00:00Z');
+    storage.setItem(patch.key, patch.value);
+
+    const reloaded = createTrackerStore({ storage });
+
+    expect(reloaded.getState().records['42']).toBeUndefined();
+    expect(storage.getItem(trackerFieldKey('42', 'notes'))).toBeNull();
+    expect(storage.getItem(trackerFieldKey('42', 'base'))).toBeNull();
+    expect(reloaded.getPersistenceError()).toBeNull();
+  });
+
+  it('reports incomplete cleanup and retries without losing another record', () => {
+    const storage = new MemoryStorage();
+    const store = createTrackerStore({ storage });
+    store.saveOpportunity(createJob());
+    store.setNotes(42, 'Cleanup retry note');
+    store.saveOpportunity(createJob({ id: 43 }));
+    const remove = vi.spyOn(storage, 'removeItem').mockImplementation(() => {
+      throw new Error('Storage temporarily blocked');
+    });
+
+    store.removeOpportunity(42);
+    expect(store.getPersistenceError()).not.toBeNull();
+    expect(storage.getItem(trackerFieldKey('42', 'notes'))).toContain('Cleanup retry note');
+    expect(store.getState().records['43']).toBeDefined();
+
+    remove.mockRestore();
+    store.refreshFromStorage();
+    expect(store.getPersistenceError()).toBeNull();
+    expect(storage.getItem(trackerFieldKey('42', 'notes'))).toBeNull();
+    expect(createTrackerStore({ storage }).getState().records['42']).toBeUndefined();
+  });
+
+  it('does not replay pending edits over another tab deletion', () => {
+    const storage = new MemoryStorage();
+    const first = createTrackerStore({ storage });
+    first.saveOpportunity(createJob());
+    const stale = createTrackerStore({ storage });
+    const write = vi.spyOn(storage, 'setItem').mockImplementation(() => {
+      throw new Error('Write temporarily blocked');
+    });
+    stale.setNotes(42, 'Pending stale note');
+    write.mockRestore();
+    first.removeOpportunity(42);
+
+    stale.setStatus(42, 'applied');
+
+    expect(createTrackerStore({ storage }).getState().records['42']).toBeUndefined();
+    expect(storage.getItem(trackerFieldKey('42', 'notes'))).toBeNull();
+    expect(stale.getPersistenceError()).toBeNull();
+  });
+
+  it('does not replay a failed revival after another tab has saved and deleted the record', () => {
+    const storage = new MemoryStorage();
+    const first = createTrackerStore({ storage });
+    first.saveOpportunity(createJob());
+    first.removeOpportunity(42);
+    const stale = createTrackerStore({ storage });
+    const write = vi.spyOn(storage, 'setItem').mockImplementation(() => {
+      throw new Error('Write temporarily blocked');
+    });
+    stale.saveOpportunity(createJob());
+    write.mockRestore();
+    first.saveOpportunity(createJob());
+    first.removeOpportunity(42);
+
+    stale.setNotes(42, 'A failed revival must not restore this content');
+
+    expect(createTrackerStore({ storage }).getState().records['42']).toBeUndefined();
+    expect(storage.getItem(trackerFieldKey('42', 'base'))).toBeNull();
+    expect(storage.getItem(trackerFieldKey('42', 'notes'))).toBeNull();
+  });
+
+  it('purges a removed record from version-zero item arrays as well', () => {
+    const storage = new MemoryStorage();
+    const original = createTrackerStore({ storage: new MemoryStorage() });
+    original.saveOpportunity(createJob());
+    original.setNotes(42, 'Legacy item-array note');
+    storage.setItem(trackerStorageKey, JSON.stringify({ version: 0, items: Object.values(original.getState().records) }));
+    const store = createTrackerStore({ storage });
+
+    store.removeOpportunity(42);
+
+    expect(JSON.parse(storage.getItem(trackerStorageKey)!).items).toEqual([]);
+    expect(createTrackerStore({ storage }).getState().records['42']).toBeUndefined();
+  });
+
+  it('does not sanitize or drop unrelated legacy data while purging a record', () => {
+    const storage = new MemoryStorage();
+    const original = createTrackerStore({ storage: new MemoryStorage() });
+    original.saveOpportunity(createJob());
+    const legacy = {
+      ...original.getState(),
+      records: { ...original.getState().records, '43': { opportunityId: 43, unrecognized: 'Retain this data' } },
+      customMetadata: 'Keep unrelated legacy fields',
+    };
+    storage.setItem(trackerStorageKey, JSON.stringify(legacy));
+    const store = createTrackerStore({ storage });
+
+    store.removeOpportunity(42);
+
+    const retained = JSON.parse(storage.getItem(trackerStorageKey)!);
+    expect(retained.records['42']).toBeUndefined();
+    expect(retained.records['43']).toEqual(legacy.records['43']);
+    expect(retained.customMetadata).toBe(legacy.customMetadata);
+  });
+
+  it('retains an observable error when the deletion marker cannot be written', () => {
+    const storage = new MemoryStorage();
+    const store = createTrackerStore({ storage });
+    store.saveOpportunity(createJob());
+    const write = vi.spyOn(storage, 'setItem').mockImplementation(() => {
+      throw new Error('Write blocked');
+    });
+
+    store.removeOpportunity(42);
+
+    expect(store.getPersistenceError()).not.toBeNull();
+    expect(storage.getItem(trackerFieldKey('42', 'base'))).not.toBeNull();
+    write.mockRestore();
+    store.saveOpportunity(createJob({ id: 43 }));
+    expect(store.getPersistenceError()).toBeNull();
+    expect(storage.getItem(trackerFieldKey('42', 'base'))).toBeNull();
   });
 
   it('reloads the latest storage rather than a delayed serialized event', () => {
@@ -326,6 +482,7 @@ describe('tracker store', () => {
         throw new Error('Storage is blocked');
       },
       key: () => null,
+      removeItem: () => { throw new Error('Storage is blocked'); },
       setItem: () => {
         throw new Error('Storage is blocked');
       },
@@ -349,6 +506,7 @@ describe('tracker store', () => {
       },
       getItem: (key) => values.get(key) ?? null,
       key: (index) => [...values.keys()][index] ?? null,
+      removeItem: (key) => { values.delete(key); },
       setItem: (key, value) => {
         if (shouldFail) {
           throw new Error('Storage is temporarily blocked');

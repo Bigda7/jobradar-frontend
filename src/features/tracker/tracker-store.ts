@@ -3,11 +3,13 @@ import { useSyncExternalStore } from 'react';
 import type { JobResponse, MatchResponse } from '../../api';
 import {
   basePatch,
+  discardDeletedTrackerPatch,
   isTrackerStorageKey,
   lifecyclePatch,
   loadTrackerData,
   notesPatch,
   placementPatch,
+  purgeDeletedTrackerData,
   type TrackerPatch,
   type TrackerStorage,
 } from './tracker-persistence';
@@ -50,7 +52,7 @@ export interface TrackerStore {
 }
 
 const trackerPersistenceError =
-  'Tracker changes could not be saved in this browser. They may be lost after reload.';
+  'Tracker changes could not be saved in this browser. Changes or deletion cleanup may be incomplete. Keep this tab open and retry when storage is available.';
 
 function getBrowserStorage(): TrackerStorage | null {
   if (typeof window === 'undefined') {
@@ -107,8 +109,8 @@ export function createTrackerStore(
       const loaded = loadTrackerData(storage, storageKey);
       state = loaded.state;
       ranks = loaded.ranks;
+      purgeDeletedTrackerData(storage, storageKey);
     } catch {
-      state = createEmptyTrackerState();
       persistenceError = trackerPersistenceError;
     }
   }
@@ -128,11 +130,13 @@ export function createTrackerStore(
 
     try {
       const loaded = loadTrackerData(storage, storageKey);
-      if (JSON.stringify(loaded.state) !== JSON.stringify(state)) {
-        state = loaded.state;
-        notify();
-      }
+      const changed = JSON.stringify(loaded.state) !== JSON.stringify(state);
+      const hadError = persistenceError !== null;
+      state = loaded.state;
       ranks = loaded.ranks;
+      purgeDeletedTrackerData(storage, storageKey);
+      persistenceError = null;
+      if (changed || hadError) notify();
     } catch {
       persistenceError = trackerPersistenceError;
       notify();
@@ -142,7 +146,7 @@ export function createTrackerStore(
   const rankAtEnd = (status: TrackerStatus) =>
     Math.max(0, ...state.order[status].map((id) => ranks.get(id) ?? 0)) + 1_024;
 
-  const commit = (nextState: TrackerState, patches: TrackerPatch[]) => {
+  const commit = (nextState: TrackerState, patches: TrackerPatch[], revivedId?: string) => {
     const validated = trackerStateSchema.parse(nextState);
     state = validated;
 
@@ -152,9 +156,14 @@ export function createTrackerStore(
       }
       try {
         for (const [key, value] of pendingPatches) {
+          if (discardDeletedTrackerPatch(storage, key, storageKey, revivedId)) {
+            pendingPatches.delete(key);
+            continue;
+          }
           storage.setItem(key, value);
         }
         pendingPatches.clear();
+        purgeDeletedTrackerData(storage, storageKey);
         persistenceError = null;
         const loaded = loadTrackerData(storage, storageKey);
         state = loaded.state;
@@ -216,7 +225,7 @@ export function createTrackerStore(
           lifecyclePatch(id, false, timestamp, storageKey),
         );
       }
-      commit(nextState, patches);
+      commit(nextState, patches, existing ? undefined : id);
       return record;
     },
     setStatus: (opportunityId, status) => {
