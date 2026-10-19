@@ -48,8 +48,8 @@ const minimumScoreOptions = [
 ];
 
 const sortOptions = [
+  { value: 'newest', label: 'Newest first' },
   { value: 'score', label: 'Score: high to low' },
-  { value: 'newest', label: 'Publication: newest' },
   { value: 'company', label: 'Company: A to Z' },
 ];
 

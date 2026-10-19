@@ -3,6 +3,27 @@ import { describe, expect, it } from 'vitest';
 import { createMatchRoute, readMatchPageOptions } from './match-navigation';
 
 describe('match navigation', () => {
+  it.each(['', 'min_score=35&max_score=54'])(
+    'defaults to newest first for the match range %s',
+    (query) => {
+      expect(readMatchPageOptions(new URLSearchParams(query)).sort).toBe('newest');
+    },
+  );
+
+  it.each(['score', 'newest', 'company'] as const)(
+    'preserves an explicit %s sort instead of replacing it with the default',
+    (sort) => {
+      expect(readMatchPageOptions(new URLSearchParams({ sort })).sort).toBe(sort);
+      const route = createMatchRoute(12, { sort });
+      expect(new URL(route, 'https://example.test').searchParams.get('sort')).toBe(sort);
+    },
+  );
+
+  it('uses newest first in generated routes when sorting was not specified', () => {
+    const route = createMatchRoute(12, {});
+    expect(new URL(route, 'https://example.test').searchParams.get('sort')).toBe('newest');
+  });
+
   it('keeps the cached page and filters when linking to a loaded match', () => {
     const route = createMatchRoute(214, {
       min_score: 70,
@@ -34,7 +55,7 @@ describe('match navigation', () => {
       minimumScore: 55,
       maximumScore: 100,
       offset: 0,
-      sort: 'score',
+      sort: 'newest',
       tierFocus: 'all',
     });
   });
