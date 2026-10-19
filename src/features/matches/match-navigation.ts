@@ -2,6 +2,7 @@ import type { MatchFilters } from '../../api';
 import type { MatchSort, MatchTierFocus } from './match-view';
 
 const defaultMinimumScore = 55;
+const defaultMatchSort: MatchSort = 'newest';
 const maximumOffset = 100_000;
 
 function readInteger(
@@ -35,9 +36,9 @@ export function readMatchPageOptions(params: URLSearchParams): {
     maximumScore: readInteger(params.get('max_score'), minimumScore, 100, 100),
     offset: readInteger(params.get('offset'), 0, maximumOffset, 0),
     sort:
-      requestedSort === 'newest' || requestedSort === 'company'
+      requestedSort === 'score' || requestedSort === 'newest' || requestedSort === 'company'
         ? requestedSort
-        : 'score',
+        : defaultMatchSort,
     tierFocus:
       requestedTier === 'top' || requestedTier === 'strong' || requestedTier === 'good'
         ? requestedTier
@@ -52,7 +53,7 @@ export function createMatchRoute(id: number, filters: MatchFilters): string {
   if (filters.max_score !== undefined) {
     params.set('max_score', String(filters.max_score));
   }
-  params.set('sort', filters.sort ?? 'score');
+  params.set('sort', filters.sort ?? defaultMatchSort);
   params.set('offset', String(filters.offset ?? 0));
   if (filters.source) {
     params.set('source', filters.source);
